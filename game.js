@@ -45,6 +45,38 @@
     motion: document.getElementById("motionButton")
   };
 
+  // Keep the 1280×720 game world stable while fitting its CSS presentation to
+  // the currently visible browser/PWA viewport. visualViewport accounts for
+  // mobile browser chrome more accurately than 100vh alone.
+  let viewportUpdateFrame = 0;
+
+  function updateViewportLayout() {
+    if (viewportUpdateFrame) cancelAnimationFrame(viewportUpdateFrame);
+
+    const viewport = window.visualViewport;
+    const viewportWidth = Math.max(1, Math.round(viewport?.width || window.innerWidth));
+    const viewportHeight = Math.max(1, Math.round(viewport?.height || window.innerHeight));
+    const root = document.documentElement;
+
+    root.style.setProperty("--app-width", `${viewportWidth}px`);
+    root.style.setProperty("--app-height", `${viewportHeight}px`);
+
+    viewportUpdateFrame = requestAnimationFrame(() => {
+      viewportUpdateFrame = 0;
+      const bodyStyle = window.getComputedStyle(document.body);
+      const horizontalPadding = parseFloat(bodyStyle.paddingLeft) + parseFloat(bodyStyle.paddingRight);
+      const verticalPadding = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+      const controlsVisible = !ui.touch.hidden && window.getComputedStyle(ui.touch).display !== "none";
+      const controlsHeight = controlsVisible ? ui.touch.getBoundingClientRect().height : 0;
+      const availableWidth = Math.max(1, viewportWidth - horizontalPadding);
+      const availableHeight = Math.max(1, viewportHeight - verticalPadding - controlsHeight);
+      const scale = Math.max(0.1, Math.min(availableWidth / VIEW.width, availableHeight / VIEW.height, 1.125));
+
+      root.style.setProperty("--game-width", `${Math.floor(VIEW.width * scale)}px`);
+      root.style.setProperty("--game-height", `${Math.floor(VIEW.height * scale)}px`);
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Tunable game settings
   // ---------------------------------------------------------------------------
@@ -406,6 +438,8 @@
     const playing = name === "game";
     ui.hud.hidden = !playing;
     ui.touch.hidden = !playing;
+    document.body.classList.toggle("game-is-active", playing);
+    updateViewportLayout();
   }
 
   function announce(text) {
@@ -1888,6 +1922,14 @@
     if (state.mode === "playing") pauseGame();
   });
 
+  window.addEventListener("resize", updateViewportLayout, { passive: true });
+  window.addEventListener("orientationchange", updateViewportLayout, { passive: true });
+  window.visualViewport?.addEventListener("resize", updateViewportLayout, { passive: true });
+  window.visualViewport?.addEventListener("scroll", updateViewportLayout, { passive: true });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) updateViewportLayout();
+  });
+
   document.querySelectorAll(".touch-button").forEach((button) => {
     const action = button.dataset.action;
     const press = (event) => {
@@ -1975,6 +2017,7 @@
   updateSoundButtons();
   updateMotionButton();
   updateHud();
+  updateViewportLayout();
   setScreen("title");
   requestAnimationFrame(gameLoop);
 })();

@@ -1,4 +1,4 @@
-const CACHE_NAME = "sprinkles-rainbow-gem-pages-v1";
+const CACHE_NAME = "sprinkles-rainbow-gem-pages-v2";
 const CORE_ASSETS = [
   "./",
   "./index.html",

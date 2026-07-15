@@ -153,6 +153,18 @@ Keep platforms generous and test every jump in all three difficulty modes.
 - Emoji are used only in interface buttons and labels and may look a little different across operating systems.
 - Very old browsers without Canvas, modern JavaScript, or Web Audio support are not supported. The game itself still works silently if Web Audio is unavailable.
 
+## Mobile viewport and installed-app testing
+
+The game keeps its internal Canvas world at 1280 × 720 and scales only its displayed size. The visible frame uses the smaller of the available width and height ratios, after reserving space for touch controls, so physics and collision coordinates do not change. Mobile sizing uses `window.visualViewport` when available, with `100dvh` and `100vh` fallbacks for browser and installed-app viewport differences.
+
+To test mobile layout locally, serve the folder over HTTP, open it with responsive developer tools, and check both portrait and landscape orientations. During gameplay, confirm that the HUD, canvas, left/right controls, and jump button remain visible without page scrolling. Menus and help panels may scroll inside the game frame on unusually short screens.
+
+For installed-PWA testing, open the deployed HTTPS page on a phone, add it to the Home Screen, launch it from the new icon, rotate the device, switch to another app, and return. The current stage and scale should remain intact. Safe-area padding keeps the control row above notches and home indicators.
+
+After a deployment, reload once while online so the updated service worker can replace its cache. If an older layout remains, close all installed-game windows and reopen the app. As a final fallback, remove the Home Screen app, clear the site's browser data, visit the deployed URL again, and reinstall it.
+
+Known mobile limitation: very short portrait screens necessarily show a smaller 16:9 play area. The game remains usable and centered, but landscape provides a larger view. Mobile browser toolbar animations can briefly resize the frame while the toolbar expands or collapses.
+
 ## Future ideas
 
 1. Add a Stage 3 sky-cavern with friendly fireflies and color-matching cloud bridges.
