@@ -5,8 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#241a58">
   <meta name="description" content="A cheerful, child-friendly cave adventure starring Sprinkles the cat.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sprinkles">
+  <meta property="og:title" content="Sprinkles and the Rainbow Gem">
+  <meta property="og:description" content="Collect stars and magic hats, then find the Rainbow Gem!">
+  <meta property="og:image" content="https://nicolting.github.io/sprinkles-rainbow-gem/og.png">
+  <meta property="og:type" content="website">
   <title>Sprinkles and the Rainbow Gem</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
   <main class="app-shell" id="app">
@@ -187,5 +197,12 @@
   <div class="sr-only" id="announcer" aria-live="assertive"></div>
   <noscript><p class="no-script">Please turn on JavaScript to help Sprinkles find the Rainbow Gem.</p></noscript>
   <script src="game.js"></script>
+  <script>
+    if ("serviceWorker" in navigator && window.isSecureContext) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
