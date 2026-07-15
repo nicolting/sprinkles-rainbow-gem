@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { RegisterServiceWorker } from "./register-service-worker";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -13,6 +14,19 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(origin),
     title: "Sprinkles and the Rainbow Gem",
     description: "A cheerful, child-friendly magical cave adventure starring Sprinkles the lavender cat.",
+    manifest: "/manifest.webmanifest",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: "Sprinkles"
+    },
+    icons: {
+      icon: [
+        { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icon-512.png", sizes: "512x512", type: "image/png" }
+      ],
+      apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }]
+    },
     openGraph: {
       title: "Sprinkles and the Rainbow Gem",
       description: "Collect stars and magic hats, then find the Rainbow Gem!",
@@ -30,7 +44,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <RegisterServiceWorker />
+      </body>
     </html>
   );
 }
