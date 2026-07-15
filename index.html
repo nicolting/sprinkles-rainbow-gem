@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#241a58">
+  <meta name="description" content="A cheerful, child-friendly cave adventure starring Sprinkles the cat.">
+  <title>Sprinkles and the Rainbow Gem</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell" id="app">
+    <section class="game-frame" aria-label="Sprinkles and the Rainbow Gem game">
+      <canvas id="gameCanvas" width="1280" height="720" aria-label="The magical cave adventure play area">
+        Your browser needs Canvas support to play Sprinkles and the Rainbow Gem.
+      </canvas>
+
+      <div class="screen title-screen is-visible" id="titleScreen">
+        <div class="title-card panel">
+          <div class="sparkle-row" aria-hidden="true">✦　⋆　✧　⋆　✦</div>
+          <div class="cat-portrait" aria-label="Sprinkles, a smiling lavender cat">
+            <span class="cat-ear ear-left"></span>
+            <span class="cat-ear ear-right"></span>
+            <span class="cat-face">
+              <span class="cat-eye eye-left"></span>
+              <span class="cat-eye eye-right"></span>
+              <span class="cat-nose"></span>
+              <span class="cat-smile smile-left"></span>
+              <span class="cat-smile smile-right"></span>
+              <span class="cat-cheek cheek-left"></span>
+              <span class="cat-cheek cheek-right"></span>
+            </span>
+            <span class="rainbow-collar"></span>
+          </div>
+          <p class="eyebrow">A magical cave adventure</p>
+          <h1>Sprinkles <span>and the</span><br>Rainbow Gem</h1>
+          <p class="title-copy">Leap, sparkle, and explore your way to the missing gem!</p>
+
+          <fieldset class="difficulty-picker">
+            <legend>Choose your adventure</legend>
+            <label class="difficulty-option">
+              <input type="radio" name="difficulty" value="easy" checked>
+              <span><b>Easy</b><small>5 hearts · gentle pace</small></span>
+            </label>
+            <label class="difficulty-option">
+              <input type="radio" name="difficulty" value="normal">
+              <span><b>Normal</b><small>3 hearts · a little quicker</small></span>
+            </label>
+            <label class="difficulty-option">
+              <input type="radio" name="difficulty" value="practice">
+              <span><b>Practice</b><small>Unlimited hearts · path hints</small></span>
+            </label>
+          </fieldset>
+
+          <button class="primary-button" id="startButton">Start Adventure <span aria-hidden="true">→</span></button>
+          <div class="title-actions">
+            <button class="secondary-button" id="howToButton" aria-expanded="false" aria-controls="howToPanel">How to Play</button>
+            <button class="icon-button" id="titleSoundButton" aria-pressed="false" aria-label="Turn sound off">🔊 <span>Sound on</span></button>
+            <button class="icon-button" id="motionButton" aria-pressed="false">✨ <span>Full motion</span></button>
+          </div>
+
+          <div class="how-to-panel" id="howToPanel" hidden>
+            <h2>How to Play</h2>
+            <div class="how-to-grid">
+              <div><kbd>←</kbd><kbd>→</kbd><strong>Move</strong><span>or use A and D</span></div>
+              <div><kbd>↑</kbd><strong>Jump</strong><span>or use W / Space</span></div>
+              <div><kbd>P</kbd><strong>Pause</strong><span>take a break anytime</span></div>
+              <div><kbd>R</kbd><strong>Restart</strong><span>begin the level again</span></div>
+            </div>
+            <p>Follow the signs, collect stars, and look for crystal checkpoints. A warning sign appears before each friendly round stone falls.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen story-screen" id="storyScreen" hidden>
+        <div class="story-card panel">
+          <div class="story-gem" aria-hidden="true">♦</div>
+          <p class="eyebrow">The story begins...</p>
+          <h2>The cave has lost its colors!</h2>
+          <p>Deep inside the Glittering Cave, a magical Rainbow Gem has gone missing.</p>
+          <p>Sprinkles is brave, curious, and ready to find it!</p>
+          <div class="story-tip"><span aria-hidden="true">★</span> Collect sparkling stars along the way.</div>
+          <button class="primary-button" id="continueButton">Enter the Cave <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+
+      <div class="screen transition-screen" id="stageTransitionScreen" hidden>
+        <div class="transition-card panel">
+          <div class="transition-trail" aria-hidden="true">
+            <span>★</span><span>✦</span><span>●</span><span>◆</span><span>✧</span>
+          </div>
+          <p class="eyebrow">Stage 1 complete</p>
+          <h2>A colorful trail leads deeper!</h2>
+          <p>Sprinkles followed the sparkling trail deeper into the cave. Something colorful is waiting ahead!</p>
+          <div class="transition-score"><span aria-hidden="true">★</span> <b id="transitionStars">0 / 20</b> stars found</div>
+          <button class="primary-button" id="enterStage2Button">Enter the Crystal Cave <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+
+      <section class="hud" id="hud" aria-label="Game status" hidden>
+        <div class="hud-pill hearts" id="heartDisplay" aria-label="Hearts"></div>
+        <div class="hud-pill counter" id="starHud" aria-label="Stars collected"><span aria-hidden="true">★</span> <b id="starCount">0</b><small id="starTotal">/ 20</small></div>
+        <div class="hat-hud" id="hatHud" aria-label="Magic hats collected" hidden>
+          <div class="hat-hud-label">Magic Hats: <b id="hatCount">0 / 6</b><small id="savedStars">★ 0 stars saved</small></div>
+          <div class="hat-slots" id="hatSlots" aria-hidden="true">
+            <span data-hat="red" title="Red party hat"></span>
+            <span data-hat="orange" title="Orange flower hat"></span>
+            <span data-hat="yellow" title="Yellow crown"></span>
+            <span data-hat="green" title="Green leaf hat"></span>
+            <span data-hat="blue" title="Blue wizard hat"></span>
+            <span data-hat="purple" title="Purple star hat"></span>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span id="sectionName">Cave Entrance</span><span id="progressText">0%</span></div>
+          <div class="progress-track" role="progressbar" aria-label="Distance to the Rainbow Gem" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="progressFill"></span>
+            <i aria-hidden="true">♦</i>
+          </div>
+        </div>
+        <div class="checkpoint-hud" id="checkpointHud"><span aria-hidden="true">◆</span><b id="checkpointStatus">Cave start</b></div>
+        <div class="hud-actions">
+          <button class="hud-button" id="soundButton" aria-pressed="false" aria-label="Turn sound off">🔊</button>
+          <button class="hud-button" id="pauseButton" aria-label="Pause game">Ⅱ</button>
+        </div>
+      </section>
+
+      <div class="message-bubble" id="messageBubble" role="status" aria-live="polite" hidden></div>
+
+      <div class="screen pause-screen" id="pauseScreen" hidden>
+        <div class="pause-card panel">
+          <div class="pause-icon" aria-hidden="true">Ⅱ</div>
+          <p class="eyebrow">Adventure paused</p>
+          <h2>Ready when you are!</h2>
+          <button class="primary-button" id="resumeButton">Keep Exploring</button>
+          <div class="restart-choices">
+            <p>Where should Sprinkles restart?</p>
+            <button class="secondary-button" id="restartCheckpointButton">Latest Checkpoint</button>
+            <button class="secondary-button" id="restartStageButton">Stage Beginning</button>
+          </div>
+          <button class="text-button" id="pauseTitleButton">Return to Title</button>
+          <p class="shortcut-hint">Press <kbd>P</kbd> to continue</p>
+        </div>
+      </div>
+
+      <div class="screen victory-screen" id="victoryScreen" hidden>
+        <div class="victory-card panel">
+          <div class="victory-rays" aria-hidden="true"></div>
+          <div class="victory-gem" aria-hidden="true">♦</div>
+          <p class="eyebrow">You did it!</p>
+          <h2>Every magic hat—and<br>the Rainbow Gem!</h2>
+          <p>Sprinkles collected every magic hat and found the Rainbow Gem! The cave is glowing with color again!</p>
+          <div class="victory-results">
+            <div class="victory-score"><span aria-hidden="true">★</span><b id="victoryStars">0</b><small>Stage 1 stars</small></div>
+            <canvas id="victoryCatCanvas" width="260" height="250" aria-label="Sprinkles wearing all six magic hats"></canvas>
+            <div class="victory-score hats-score"><span aria-hidden="true">▲</span><b id="victoryHats">0 / 6</b><small>magic hats</small></div>
+          </div>
+          <div class="victory-hat-colors" id="victoryHatColors" aria-label="Collected hat colors"></div>
+          <div class="victory-actions">
+            <button class="primary-button" id="playAgainButton">Play Again</button>
+            <button class="secondary-button" id="replayStage1Button">Replay Stage 1</button>
+            <button class="secondary-button" id="replayStage2Button">Replay Stage 2</button>
+            <button class="text-button" id="victoryTitleButton">Return to Title</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen error-screen" id="errorScreen" hidden>
+        <div class="error-card panel">
+          <div class="pause-icon" aria-hidden="true">✦</div>
+          <h2>A tiny cave cloud appeared</h2>
+          <p>Sprinkles is ready to try again!</p>
+          <button class="primary-button" id="errorRestartButton">Restart Adventure</button>
+        </div>
+      </div>
+    </section>
+
+    <nav class="touch-controls" id="touchControls" aria-label="Touch game controls" hidden>
+      <div class="touch-group">
+        <button class="touch-button" data-action="left" aria-label="Move left">←</button>
+        <button class="touch-button" data-action="right" aria-label="Move right">→</button>
+      </div>
+      <button class="touch-button jump-button" data-action="jump" aria-label="Jump"><span>↑</span><small>JUMP</small></button>
+    </nav>
+  </main>
+
+  <div class="sr-only" id="announcer" aria-live="assertive"></div>
+  <noscript><p class="no-script">Please turn on JavaScript to help Sprinkles find the Rainbow Gem.</p></noscript>
+  <script src="game.js"></script>
+</body>
+</html>
