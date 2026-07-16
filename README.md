@@ -1,6 +1,6 @@
 # Sprinkles and the Rainbow Gem
 
-**Sprinkles and the Rainbow Gem** is a cheerful, child-friendly two-stage browser game about a curious lavender cat exploring the Glittering Cave. Stage 1 is a gentle star-collecting adventure. Stage 2 continues deeper into the colorful Crystal Cave, where six magic balls transform into hats that stack above Sprinkles' head. Finding every hat opens the path to the Rainbow Gem.
+**Sprinkles and the Rainbow Gem** is a cheerful, child-friendly three-stage browser game about a curious lavender cat exploring the Glittering Cave. Stage 1 is a gentle star-collecting adventure. Stage 2 continues into the colorful Crystal Cave, where six magic balls transform into hats. Stage 3 follows a delicious smell into a magical underground bakery, where six original Canvas-drawn treats make Sprinkles grow and open the path to the Rainbow Gem.
 
 The game is fully local. It has no accounts, ads, purchases, data collection, external links, downloads, or internet requirements.
 
@@ -32,7 +32,7 @@ The title screen also includes a reduced-motion toggle. The game automatically p
 - **Normal** has three hearts, standard-width platforms, moderate falling-stone speed, and standard checkpoints.
 - **Practice Mode** has unlimited hearts, very slow obstacles, the longest warnings, extra-wide platforms, extra checkpoints, and visible path arrows.
 
-All modes have unlimited retries. Touching a hazard gently returns Sprinkles to the most recent checkpoint, and collected stars, magic balls, and hats are kept. If the heart counter reaches zero, it simply refills.
+All modes have unlimited retries. Touching a hazard gently returns Sprinkles to the most recent checkpoint, and collected stars, magic balls, hats, foods, and growth are kept. If the heart counter reaches zero, it simply refills.
 
 ## Stage 1: Glittering Cave
 
@@ -67,11 +67,30 @@ Collected hats stack above Sprinkles and follow the same Canvas transformation u
 
 The Stage 2 HUD shows all six collection slots, the saved Stage 1 star total, hearts, checkpoint status, progress, sound, and pause controls. Practice Mode also highlights the next uncollected ball.
 
+Reaching the Stage 2 gem with all six hats shows a second story transition. Select **Enter the Magic Bakery** to begin Stage 3 without resetting the saved stars or hat inventory.
+
+## Stage 3: Magic Bakery Cave
+
+1. **Bakery Welcome** — a safe Strawberry Cupcake teaches the growth mechanic.
+2. **Easy Bakery Platforms** — wide cookie and frosting platforms hold the Chocolate-Chip Cookie.
+3. **Falling Pastry Pantry** — clearly warned cookie and bread pieces fall near safe waiting areas and the Glazed Doughnut.
+4. **Moving Dessert Crossing** — slow cake and cookie platforms cross a sparkling jam pool and lead to the Blueberry Muffin and Croissant.
+5. **Grow-and-Open Gate** — a bakery gate opens from the growth-level state at Growth 5; missed food always remains reachable behind the player.
+6. **Rainbow Cake Finale** — the Rainbow Birthday Cake Slice creates Growth 6, opens the final exit, and leads to the Rainbow Gem.
+
+The six configurable foods in `GROWTH_FOODS` are Strawberry Cupcake, Chocolate-Chip Cookie, Glazed Doughnut, Blueberry Muffin, Croissant, and Rainbow Birthday Cake Slice. Each unique ID can be collected once. `state.growthLevel` is always derived from the validated number of unique food IDs and is clamped to 0–6.
+
+`GROWTH_LEVELS` contains the seven visual scales: `1.00`, `1.08`, `1.16`, `1.24`, `1.32`, `1.40`, and `1.48`. The artwork scales from the paw/ground anchor and briefly overshoots before settling. Reduced Motion switches immediately to the new target scale with only a short glow.
+
+Visual size and physics are intentionally separate. Every growth configuration currently uses `hitboxScale: 1.00`, so the fair 58 × 62 physics box, collection reach, ceiling clearance, and jump behavior do not expand with the decorative sprite. Growth never changes the Canvas or page dimensions. The camera keeps its existing zoom and only receives a tiny configured horizontal target offset.
+
+The Stage 3 HUD shows food count, growth count, six accessible food slots, and a compact growth meter. On small screens the labels and icons compact without changing the responsive 1280 × 720 presentation.
+
 ## Files
 
 - `index.html` — accessible screens, buttons, HUD, game canvas, and touch controls.
 - `style.css` — responsive layout, title artwork, menus, controls, focus states, and reduced-motion styles.
-- `game.js` — stage management, both level configurations, movement, collisions, obstacles, stars, magic balls, hat inventory and rendering, checkpoints, drawing, generated sounds, and UI logic.
+- `game.js` — stage management, all three level configurations, movement, collisions, obstacles, stars, magic balls, foods, visual growth, inventory, versioned saves, checkpoints, drawing, generated sounds, and UI logic.
 - `README.md` — setup, controls, customization, and extension notes.
 
 ## Adjust the difficulty
@@ -92,7 +111,7 @@ For example, increasing `warningTime` makes the yellow falling-stone warning sta
 
 World measurements are grouped in `STAGE_WORLDS`. Section names are grouped in `STAGE_SECTIONS`.
 
-The selected stage swaps in values from `STAGE_WORLDS` and `STAGE_SECTIONS`. Both stages continue to use the same movement, camera, platform, rock, checkpoint, hazard, sound, and pause systems.
+The selected stage swaps in values from `STAGE_WORLDS` and `STAGE_SECTIONS`. All three stages use the same movement, camera, platform, obstacle, checkpoint, hazard, sound, input, mobile-control, and pause systems.
 
 ## Change magic hats and balls
 
@@ -121,6 +140,24 @@ The current collection is stored in `state.hats` as an ordered array of hat IDs.
 
 Hazard returns and **Restart from Latest Checkpoint** move only the player and restore hearts; they do not rebuild the level, so ball flags and `state.hats` remain intact. **Restart Stage 2 from Beginning** rebuilds Stage 2 and clears its hats but preserves `state.stage1Stars`. Returning to the title or replaying Stage 1 begins a new full adventure.
 
+In Stage 3 only the newest collected hat is drawn on Sprinkles so the growing sprite and upcoming hazards stay readable. All six hats remain preserved in `state.hats`, the saved file, the inventory/results UI, and the final result color chips.
+
+## Change the foods, growth, or bakery gate
+
+- Edit `GROWTH_FOODS` in `game.js` to change a food's `name`, `icon`, Canvas `style`, colors, or world `x`/`y` position. Keep IDs unique and keep each item above a reachable platform.
+- Edit `drawFoodShape()` to change the original cupcake, cookie, doughnut, muffin, croissant, or cake artwork.
+- Edit `visualScale` values in `GROWTH_LEVELS` to tune appearance. Keep `hitboxScale` independent; it remains `1.00` in the shipped level so decorative growth cannot make tunnels or hazards unfair.
+- Edit `BAKERY_GATE_GROWTH` to change the puzzle requirement. Keep it below the six-food exit requirement so the final food stays reachable.
+- Edit `buildStage3()` to move platforms, oven checkpoints, falling pastries, gates, or the jam crossing.
+
+## Saved progress and checkpoints
+
+Progress is stored locally under `sprinkles-rainbow-gem-save` using save version 3. It contains no personal information. The loader validates the difficulty, stage number, unique star indices, known hat IDs, known food IDs, checkpoint coordinates, unlock flags, and completion state. Growth is recalculated from unique valid foods instead of trusting a potentially corrupt stored number. Missing fields from older saves receive safe defaults, and invalid JSON falls back to a new adventure without crashing.
+
+Food collection and checkpoint activation save immediately. The game also saves when it loses focus, becomes hidden, pauses, or is minimized as an installed web app. Resuming restores the correct food flags, growth target, hats, gate state, checkpoint position, hearts, and camera. **Restart Stage 3 from Beginning** clears only Stage 3 foods and growth; Stage 1 stars and Stage 2 hats remain.
+
+The title screen displays **Continue Stage…** when a local save exists. Selecting **Start Adventure** intentionally creates a new full adventure.
+
 ## Change Sprinkles' appearance
 
 Sprinkles is drawn with Canvas shapes in the `drawSprinkles()` function in `game.js`. Search for the comments **Tail**, **Body and legs**, **Ears behind the head**, **Head**, **Forehead sprinkles**, **Face**, and **Rainbow collar and bell**.
@@ -136,7 +173,7 @@ The small title-screen portrait is styled separately in the `.cat-portrait` sect
 
 ## Add another stage
 
-Stage 1 is produced by `buildLevel(config)` and Stage 2 by `buildStage2(config)`. The `buildStage()` selector sends the existing shared systems the correct configuration. To add another stage:
+Stage 1 is produced by `buildLevel(config)`, Stage 2 by `buildStage2(config)`, and Stage 3 by `buildStage3(config)`. The `buildStage()` selector sends the existing shared systems the correct configuration. To add another stage:
 
 1. Add world measurements to `STAGE_WORLDS` and section labels to `STAGE_SECTIONS`.
 2. Create a stage builder with platforms, collectibles, checkpoints, rocks, door, and goal.
@@ -148,9 +185,9 @@ Keep platforms generous and test every jump in all three difficulty modes.
 
 ## Known limitations
 
-- The game contains two scrolling stages; it does not save progress after the tab or browser is closed.
+- Emoji are used for compact food inventory labels and can vary slightly by operating system; the playable foods themselves are original Canvas drawings.
+- Stage 3 deliberately shows only the newest hat on the growing character. The full collection remains saved and appears in results.
 - Sounds are simple tones generated by the Web Audio API, so their character can vary slightly by browser and device.
-- Emoji are used only in interface buttons and labels and may look a little different across operating systems.
 - Very old browsers without Canvas, modern JavaScript, or Web Audio support are not supported. The game itself still works silently if Web Audio is unavailable.
 
 ## Mobile viewport and installed-app testing
@@ -159,14 +196,18 @@ The game keeps its internal Canvas world at 1280 × 720 and scales only its disp
 
 To test mobile layout locally, serve the folder over HTTP, open it with responsive developer tools, and check both portrait and landscape orientations. During gameplay, confirm that the HUD, canvas, left/right controls, and jump button remain visible without page scrolling. Menus and help panels may scroll inside the game frame on unusually short screens.
 
+For Stage 3, use the transition normally or select **Replay Stage 3** after completing the adventure. Check Growth 0 and Growth 6 in portrait and landscape, ride both moving dessert platforms, activate the Growth 5 gate, collect the final cake, pause/resume, touch an oven checkpoint, refresh, and use **Continue Stage 3**. Confirm that the page dimensions do not change while Sprinkles grows.
+
 For installed-PWA testing, open the deployed HTTPS page on a phone, add it to the Home Screen, launch it from the new icon, rotate the device, switch to another app, and return. The current stage and scale should remain intact. Safe-area padding keeps the control row above notches and home indicators.
 
-After a deployment, reload once while online so the updated service worker can replace its cache. If an older layout remains, close all installed-game windows and reopen the app. As a final fallback, remove the Home Screen app, clear the site's browser data, visit the deployed URL again, and reinstall it.
+The root GitHub Pages service worker and the wrapper service worker use a game-specific versioned cache. All Stage 3 code and markup are in the existing `index.html`, `style.css`, and `game.js` core assets, so no cross-origin artwork is required. The v4 activation step deletes only older caches whose names start with this game's cache prefix.
+
+After a deployment, reload once while online so the updated service worker can replace its cache. Verify Stage 3 online, then switch the browser offline and reload to check the cached core. If an older layout remains, close all installed-game windows and reopen the app. As a final fallback, remove the Home Screen app, clear the site's browser data, visit the deployed URL again, and reinstall it.
 
 Known mobile limitation: very short portrait screens necessarily show a smaller 16:9 play area. The game remains usable and centered, but landscape provides a larger view. Mobile browser toolbar animations can briefly resize the frame while the toolbar expands or collapses.
 
 ## Future ideas
 
-1. Add a Stage 3 sky-cavern with friendly fireflies and color-matching cloud bridges.
-2. Add optional collectible badges and a local, privacy-friendly magic wardrobe.
-3. Add more Sprinkles animations, such as tipping the hat stack at checkpoints and a longer gem celebration.
+1. Stage 4 could enter a Moonlight Garden where collected fireflies illuminate safe flower bridges.
+2. Stage 4 could visit a Bubble-Lake Grotto with floating bubble platforms and a gentle color-matching puzzle.
+3. Stage 4 could climb a Cloud Library where magical story pages create temporary paths through the sky cave.

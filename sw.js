@@ -1,4 +1,5 @@
-const CACHE_NAME = "sprinkles-rainbow-gem-pages-v2";
+const CACHE_PREFIX = "sprinkles-rainbow-gem-pages-v";
+const CACHE_NAME = `${CACHE_PREFIX}4`;
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -18,7 +19,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((names) => Promise.all(
-      names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
+      names.filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME).map((name) => caches.delete(name))
     ))
   );
   self.clients.claim();

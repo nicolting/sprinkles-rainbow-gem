@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#241a58">
-  <meta name="description" content="A cheerful, child-friendly cave adventure starring Sprinkles the cat.">
+  <meta name="description" content="A cheerful three-stage cave adventure with stars, magic hats, and a magical underground bakery.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Sprinkles">
   <meta property="og:title" content="Sprinkles and the Rainbow Gem">
-  <meta property="og:description" content="Collect stars and magic hats, then find the Rainbow Gem!">
+  <meta property="og:description" content="Collect stars, magic hats, and bakery treats on the way to the Rainbow Gem!">
   <meta property="og:image" content="https://nicolting.github.io/sprinkles-rainbow-gem/og.png">
   <meta property="og:type" content="website">
   <title>Sprinkles and the Rainbow Gem</title>
@@ -63,6 +63,7 @@
           </fieldset>
 
           <button class="primary-button" id="startButton">Start Adventure <span aria-hidden="true">→</span></button>
+          <button class="secondary-button saved-adventure-button" id="continueSavedButton" hidden>Continue Saved Adventure</button>
           <div class="title-actions">
             <button class="secondary-button" id="howToButton" aria-expanded="false" aria-controls="howToPanel">How to Play</button>
             <button class="icon-button" id="titleSoundButton" aria-pressed="false" aria-label="Turn sound off">🔊 <span>Sound on</span></button>
@@ -107,6 +108,19 @@
         </div>
       </div>
 
+      <div class="screen transition-screen bakery-transition-screen" id="bakeryTransitionScreen" hidden>
+        <div class="transition-card panel">
+          <div class="transition-trail bakery-trail" aria-hidden="true">
+            <span>▲</span><span>✦</span><span>🧁</span><span>🍪</span><span>✧</span>
+          </div>
+          <p class="eyebrow">Stage 2 complete</p>
+          <h2>A delicious smell drifts deeper!</h2>
+          <p>Sprinkles followed a delicious smell deeper into the cave. A magical bakery was waiting ahead!</p>
+          <div class="transition-score"><span aria-hidden="true">▲</span> <b id="transitionHats">0 / 6</b> magic hats found</div>
+          <button class="primary-button" id="enterStage3Button">Enter the Magic Bakery <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+
       <section class="hud" id="hud" aria-label="Game status" hidden>
         <div class="hud-pill hearts" id="heartDisplay" aria-label="Hearts"></div>
         <div class="hud-pill counter" id="starHud" aria-label="Stars collected"><span aria-hidden="true">★</span> <b id="starCount">0</b><small id="starTotal">/ 20</small></div>
@@ -120,6 +134,21 @@
             <span data-hat="blue" title="Blue wizard hat"></span>
             <span data-hat="purple" title="Purple star hat"></span>
           </div>
+        </div>
+        <div class="food-hud" id="foodHud" aria-label="Magical food and growth" hidden>
+          <div class="food-hud-label">
+            <span>Magical Food: <b id="foodCount">0 / 6</b></span>
+            <span>Growth: <b id="growthCount">0 / 6</b></span>
+          </div>
+          <div class="food-slots" id="foodSlots">
+            <span data-food="cupcake" role="img" aria-label="Strawberry Cupcake: not collected">🧁</span>
+            <span data-food="cookie" role="img" aria-label="Chocolate-Chip Cookie: not collected">🍪</span>
+            <span data-food="donut" role="img" aria-label="Glazed Doughnut: not collected">🍩</span>
+            <span data-food="muffin" role="img" aria-label="Blueberry Muffin: not collected">🫐</span>
+            <span data-food="croissant" role="img" aria-label="Croissant: not collected">🥐</span>
+            <span data-food="cake" role="img" aria-label="Rainbow Birthday Cake Slice: not collected">🍰</span>
+          </div>
+          <div class="growth-meter" aria-hidden="true"><span id="growthFill"></span></div>
         </div>
         <div class="progress-wrap">
           <div class="progress-label"><span id="sectionName">Cave Entrance</span><span id="progressText">0%</span></div>
@@ -158,18 +187,24 @@
           <div class="victory-rays" aria-hidden="true"></div>
           <div class="victory-gem" aria-hidden="true">♦</div>
           <p class="eyebrow">You did it!</p>
-          <h2>Every magic hat—and<br>the Rainbow Gem!</h2>
-          <p>Sprinkles collected every magic hat and found the Rainbow Gem! The cave is glowing with color again!</p>
+          <h2>Every magical treat—and<br>the Rainbow Gem!</h2>
+          <p>Sprinkles found every magical treat, grew six times, and continued the Rainbow Gem adventure!</p>
           <div class="victory-results">
             <div class="victory-score"><span aria-hidden="true">★</span><b id="victoryStars">0</b><small>Stage 1 stars</small></div>
-            <canvas id="victoryCatCanvas" width="260" height="250" aria-label="Sprinkles wearing all six magic hats"></canvas>
+            <canvas id="victoryCatCanvas" width="300" height="270" aria-label="Maximum-size Sprinkles wearing the latest magic hat"></canvas>
             <div class="victory-score hats-score"><span aria-hidden="true">▲</span><b id="victoryHats">0 / 6</b><small>magic hats</small></div>
           </div>
           <div class="victory-hat-colors" id="victoryHatColors" aria-label="Collected hat colors"></div>
+          <div class="victory-food-summary">
+            <div class="victory-food-score"><b id="victoryFoods">0 / 6</b><small>magical foods</small></div>
+            <div class="victory-food-icons" id="victoryFoodIcons" aria-label="Collected magical foods"></div>
+            <div class="victory-food-score"><b id="victoryGrowth">0 / 6</b><small>final growth</small></div>
+          </div>
           <div class="victory-actions">
             <button class="primary-button" id="playAgainButton">Play Again</button>
             <button class="secondary-button" id="replayStage1Button">Replay Stage 1</button>
             <button class="secondary-button" id="replayStage2Button">Replay Stage 2</button>
+            <button class="secondary-button" id="replayStage3Button">Replay Stage 3</button>
             <button class="text-button" id="victoryTitleButton">Return to Title</button>
           </div>
         </div>

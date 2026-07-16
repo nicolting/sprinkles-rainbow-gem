@@ -15,6 +15,7 @@
     title: document.getElementById("titleScreen"),
     story: document.getElementById("storyScreen"),
     transition: document.getElementById("stageTransitionScreen"),
+    bakeryTransition: document.getElementById("bakeryTransitionScreen"),
     pause: document.getElementById("pauseScreen"),
     victory: document.getElementById("victoryScreen"),
     error: document.getElementById("errorScreen"),
@@ -30,6 +31,11 @@
     hatCount: document.getElementById("hatCount"),
     hatSlots: document.getElementById("hatSlots"),
     savedStars: document.getElementById("savedStars"),
+    foodHud: document.getElementById("foodHud"),
+    foodCount: document.getElementById("foodCount"),
+    growthCount: document.getElementById("growthCount"),
+    foodSlots: document.getElementById("foodSlots"),
+    growthFill: document.getElementById("growthFill"),
     checkpointStatus: document.getElementById("checkpointStatus"),
     progressText: document.getElementById("progressText"),
     progressFill: document.getElementById("progressFill"),
@@ -37,9 +43,14 @@
     section: document.getElementById("sectionName"),
     victoryStars: document.getElementById("victoryStars"),
     victoryHats: document.getElementById("victoryHats"),
+    victoryFoods: document.getElementById("victoryFoods"),
+    victoryGrowth: document.getElementById("victoryGrowth"),
+    victoryFoodIcons: document.getElementById("victoryFoodIcons"),
     victoryHatColors: document.getElementById("victoryHatColors"),
     victoryCatCanvas: document.getElementById("victoryCatCanvas"),
     transitionStars: document.getElementById("transitionStars"),
+    transitionHats: document.getElementById("transitionHats"),
+    continueSaved: document.getElementById("continueSavedButton"),
     titleSound: document.getElementById("titleSoundButton"),
     sound: document.getElementById("soundButton"),
     motion: document.getElementById("motionButton")
@@ -83,7 +94,8 @@
   const VIEW = { width: 1280, height: 720 };
   const STAGE_WORLDS = {
     1: { width: 6900, floorY: 610, lavaStart: 2760, lavaEnd: 4060, gemX: 6650 },
-    2: { width: 7200, floorY: 610, lavaStart: 3900, lavaEnd: 5230, gemX: 6820 }
+    2: { width: 7200, floorY: 610, lavaStart: 3900, lavaEnd: 5230, gemX: 6820 },
+    3: { width: 7600, floorY: 610, lavaStart: 3400, lavaEnd: 5020, gemX: 7360 }
   };
   let WORLD = { ...STAGE_WORLDS[1] };
 
@@ -140,6 +152,14 @@
       { x: 2450, name: "Tumbling Prism Trail" },
       { x: 3850, name: "Rainbow Lava Crossing" },
       { x: 5350, name: "Magic Hat Gallery" }
+    ],
+    3: [
+      { x: 0, name: "Bakery Welcome" },
+      { x: 1050, name: "Easy Bakery Platforms" },
+      { x: 2350, name: "Falling Pastry Pantry" },
+      { x: 3400, name: "Moving Dessert Crossing" },
+      { x: 5020, name: "Grow-and-Open Gate" },
+      { x: 6250, name: "Rainbow Cake Finale" }
     ]
   };
   let SECTION_NAMES = STAGE_SECTIONS[1];
@@ -152,6 +172,30 @@
     { id: "blue", name: "blue", color: "#52b9ff", accent: "#d4f2ff", hatStyle: "wizard", x: 4440, y: 405 },
     { id: "purple", name: "purple", color: "#a778ef", accent: "#eadbff", hatStyle: "star", x: 5650, y: 530 }
   ];
+
+  const GROWTH_FOODS = [
+    { id: "cupcake", name: "Strawberry Cupcake", icon: "🧁", style: "cupcake", color: "#ff7eaa", accent: "#ffe7f0", x: 520, y: 530 },
+    { id: "cookie", name: "Chocolate-Chip Cookie", icon: "🍪", style: "cookie", color: "#d79555", accent: "#6c3d2b", x: 1570, y: 468 },
+    { id: "donut", name: "Glazed Doughnut", icon: "🍩", style: "donut", color: "#f49aca", accent: "#8b5a3c", x: 2780, y: 530 },
+    { id: "muffin", name: "Blueberry Muffin", icon: "🫐", style: "muffin", color: "#7787df", accent: "#d9c7ff", x: 3545, y: 458 },
+    { id: "croissant", name: "Croissant", icon: "🥐", style: "croissant", color: "#f2b75f", accent: "#fff0b5", x: 4800, y: 410 },
+    { id: "cake", name: "Rainbow Birthday Cake Slice", icon: "🍰", style: "cake", color: "#fff0bd", accent: "#ff82af", x: 6490, y: 510 }
+  ];
+
+  // Visual growth is anchored at Sprinkles' feet. Physics deliberately stays
+  // unchanged so every tunnel and jump remains fair at all six growth levels.
+  const GROWTH_LEVELS = [
+    { visualScale: 1.00, hitboxScale: 1.00, cameraOffset: 0 },
+    { visualScale: 1.08, hitboxScale: 1.00, cameraOffset: 3 },
+    { visualScale: 1.16, hitboxScale: 1.00, cameraOffset: 6 },
+    { visualScale: 1.24, hitboxScale: 1.00, cameraOffset: 9 },
+    { visualScale: 1.32, hitboxScale: 1.00, cameraOffset: 12 },
+    { visualScale: 1.40, hitboxScale: 1.00, cameraOffset: 15 },
+    { visualScale: 1.48, hitboxScale: 1.00, cameraOffset: 18 }
+  ];
+  const BAKERY_GATE_GROWTH = 5;
+  const SAVE_KEY = "sprinkles-rainbow-gem-save";
+  const SAVE_VERSION = 3;
 
   const BACKGROUND_CRYSTALS = [
     { x: 180, y: 225, size: 52, color: "#7366dd" },
@@ -251,6 +295,9 @@
     magicBall() { [620, 780, 930].forEach((note, i) => this.tone(note, 0.15, "triangle", 0.045, i * 0.06)); }
     hatTransform() { this.tone(880, 0.18, "sine", 0.035); this.tone(1180, 0.24, "sine", 0.04, 0.09); }
     allHats() { [523, 659, 784, 988, 1175].forEach((note, i) => this.tone(note, 0.34, "triangle", 0.045, i * 0.085)); }
+    food() { [620, 760, 920].forEach((note, i) => this.tone(note, 0.14, "sine", 0.04, i * 0.055)); }
+    grow() { this.tone(520, 0.22, "triangle", 0.035); this.tone(780, 0.3, "sine", 0.04, 0.09); }
+    maxGrowth() { [523, 659, 784, 988, 1318].forEach((note, i) => this.tone(note, 0.34, "triangle", 0.045, i * 0.08)); }
     openExit() { this.tone(440, 0.3, "sine", 0.035); this.tone(660, 0.35, "sine", 0.04, 0.16); }
     victory() { [523, 659, 784, 1047].forEach((note, i) => this.tone(note, 0.42, "triangle", 0.055, i * 0.12)); }
   }
@@ -379,8 +426,59 @@
     };
   }
 
+  function buildStage3(config) {
+    const bonus = config.platformBonus;
+    const platforms = [
+      { x: 0, y: WORLD.floorY, w: 1220, h: 120, kind: "bakery-ground" },
+      { x: 1280, y: WORLD.floorY, w: 1120, h: 120, kind: "bakery-ground" },
+      { x: 1450, y: 525, w: 330 + bonus / 2, h: 28, kind: "cookie" },
+      { x: 2050, y: 545, w: 300 + bonus / 2, h: 28, kind: "frosting" },
+      { x: 2460, y: WORLD.floorY, w: 940, h: 120, kind: "bakery-ground" },
+      { x: 3430 - bonus / 2, y: 525, w: 330 + bonus, h: 34, kind: "cake" },
+      { x: 3820 - bonus / 2, y: 475, w: 350 + bonus, h: 34, kind: "cookie", moving: true, baseY: 475, lastY: 475 },
+      { x: 4240 - bonus / 2, y: 525, w: 350 + bonus, h: 34, kind: "frosting" },
+      { x: 4630 - bonus / 2, y: 465, w: 370 + bonus, h: 34, kind: "cake", moving: true, baseY: 465, lastY: 465 },
+      { x: 5020, y: WORLD.floorY, w: 2580, h: 120, kind: "bakery-ground" },
+      { x: 6300, y: 550, w: 330 + bonus / 2, h: 28, kind: "cake" },
+      { x: 6740, y: 525, w: 280 + bonus / 2, h: 28, kind: "cookie" }
+    ];
+    const checkpointDefinitions = [
+      { x: 1080, extra: true },
+      { x: 2320, extra: false },
+      { x: 3290, extra: true },
+      { x: 5100, extra: false },
+      { x: 6250, extra: true }
+    ];
+    return {
+      stage: 3,
+      platforms,
+      stars: [],
+      magicBalls: [],
+      foods: GROWTH_FOODS.map((food, index) => ({ ...food, r: 25, collected: false, phase: index * 0.82 })),
+      checkpoints: checkpointDefinitions
+        .filter((checkpoint) => config.extraCheckpoints || !checkpoint.extra)
+        .map((checkpoint) => ({ ...checkpoint, y: WORLD.floorY - 72, active: false })),
+      rocks: [2580, 3010].map((x, index) => ({
+        x,
+        y: -85,
+        size: index === 0 ? 60 : 54,
+        pastryStyle: index === 0 ? "cookie" : "bread",
+        state: "idle",
+        timer: index * 260,
+        shadow: 0,
+        warned: false
+      })),
+      key: null,
+      door: { x: 5940, y: 382, w: 62, h: 228, open: false, bakeryGate: true, growthRequirement: BAKERY_GATE_GROWTH },
+      exitDoor: { x: 7110, y: 382, w: 58, h: 228, open: false, stageExit: true, growthRequirement: GROWTH_FOODS.length },
+      gem: { x: WORLD.gemX, y: 474, w: 74, h: 105 }
+    };
+  }
+
   function buildStage(stageNumber, config) {
-    return stageNumber === 2 ? buildStage2(config) : buildLevel(config);
+    if (stageNumber === 2) return buildStage2(config);
+    if (stageNumber === 3) return buildStage3(config);
+    return buildLevel(config);
   }
 
   const input = {
@@ -400,6 +498,16 @@
     collected: 0,
     stage1Stars: 0,
     hats: [],
+    foods: [],
+    growthLevel: 0,
+    growthFromScale: 1,
+    growthAnimation: 1,
+    growthGlow: 0,
+    stage2Unlocked: false,
+    stage3Unlocked: false,
+    stage3Completed: false,
+    stage3Checkpoint: { x: 150, name: "Bakery start" },
+    stage1CollectedIndices: [],
     checkpointX: 150,
     checkpointName: "Cave start",
     cameraX: 0,
@@ -414,8 +522,156 @@
     hatGlow: 0,
     hatBounce: 0,
     newHatPop: 0,
-    transformation: null
+    transformation: null,
+    loadedSave: null
   };
+
+  function uniqueAllowed(values, allowed) {
+    if (!Array.isArray(values)) return [];
+    return [...new Set(values.filter((value) => allowed.has(value)))];
+  }
+
+  function readSavedProgress() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+      if (!raw || typeof raw !== "object") return null;
+      const hatIds = new Set(MAGIC_HAT_TYPES.map((item) => item.id));
+      const foodIds = new Set(GROWTH_FOODS.map((item) => item.id));
+      const foods = uniqueAllowed(raw.foods, foodIds).slice(0, GROWTH_FOODS.length);
+      const hats = uniqueAllowed(raw.hats, hatIds).slice(0, MAGIC_HAT_TYPES.length);
+      const stage = clamp(Number.isInteger(raw.currentStage) ? raw.currentStage : 1, 1, 3);
+      const starIndices = Array.isArray(raw.stage1CollectedIndices)
+        ? [...new Set(raw.stage1CollectedIndices.filter((value) => Number.isInteger(value) && value >= 0 && value < 20))]
+        : [];
+      const rawStage3Checkpoint = raw.stage3Checkpoint && typeof raw.stage3Checkpoint === "object" ? raw.stage3Checkpoint : {};
+      const stage3Checkpoint = {
+        x: Number.isFinite(rawStage3Checkpoint.x) ? rawStage3Checkpoint.x : (stage === 3 && Number.isFinite(raw.checkpointX) ? raw.checkpointX : 150),
+        name: typeof rawStage3Checkpoint.name === "string" ? rawStage3Checkpoint.name.slice(0, 80) : (stage === 3 && typeof raw.checkpointName === "string" ? raw.checkpointName.slice(0, 80) : "Bakery start")
+      };
+      return {
+        version: Number.isInteger(raw.version) ? raw.version : 1,
+        currentStage: stage,
+        difficulty: Object.hasOwn(DIFFICULTIES, raw.difficulty) ? raw.difficulty : "easy",
+        soundEnabled: raw.soundEnabled !== false,
+        reducedMotion: Boolean(raw.reducedMotion),
+        stage1Stars: clamp(Number(raw.stage1Stars) || starIndices.length, 0, 20),
+        stage1CollectedIndices: starIndices,
+        hats,
+        foods,
+        growthLevel: foods.length,
+        checkpointX: stage === 3 ? stage3Checkpoint.x : (Number.isFinite(raw.checkpointX) ? raw.checkpointX : 150),
+        checkpointName: stage === 3 ? stage3Checkpoint.name : (typeof raw.checkpointName === "string" ? raw.checkpointName.slice(0, 80) : ""),
+        stage3Checkpoint,
+        stage2Unlocked: Boolean(raw.stage2Unlocked || stage >= 2 || hats.length),
+        stage3Unlocked: Boolean(raw.stage3Unlocked || stage >= 3 || foods.length),
+        stage3Completed: Boolean(raw.stage3Completed)
+      };
+    } catch (error) {
+      console.warn("Saved adventure could not be loaded; starting safely.", error);
+      return null;
+    }
+  }
+
+  function saveProgress(stageOverride = null) {
+    try {
+      if (state.stage === 1 && state.level?.stars) {
+        state.stage1CollectedIndices = state.level.stars
+          .map((star, index) => star.collected ? index : -1)
+          .filter((index) => index >= 0);
+      }
+      if (state.stage === 3) state.stage3Checkpoint = { x: state.checkpointX, name: state.checkpointName };
+      const currentStage = stageOverride || state.stage;
+      const advancing = currentStage !== state.stage;
+      const data = {
+        version: SAVE_VERSION,
+        currentStage,
+        difficulty: state.difficulty,
+        soundEnabled: sounds.enabled,
+        reducedMotion: state.reducedMotion,
+        stage1Stars: state.stage1Stars,
+        stage1CollectedIndices: state.stage1CollectedIndices,
+        hats: [...state.hats],
+        foods: [...state.foods],
+        growthLevel: clamp(state.foods.length, 0, GROWTH_FOODS.length),
+        checkpointX: advancing ? 150 : state.checkpointX,
+        checkpointName: advancing ? "" : state.checkpointName,
+        stage3Checkpoint: { ...state.stage3Checkpoint },
+        stage2Unlocked: state.stage2Unlocked,
+        stage3Unlocked: state.stage3Unlocked,
+        stage3Completed: state.stage3Completed
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      state.loadedSave = data;
+      updateSavedAdventureButton();
+    } catch (error) {
+      console.warn("Progress could not be saved in this browser.", error);
+    }
+  }
+
+  function updateSavedAdventureButton() {
+    if (!ui.continueSaved) return;
+    const saved = readSavedProgress();
+    ui.continueSaved.hidden = !saved;
+    if (saved) {
+      const label = saved.stage3Completed && saved.foods.length === GROWTH_FOODS.length
+        ? "Revisit the Magic Bakery"
+        : `Continue Stage ${saved.currentStage}`;
+      ui.continueSaved.textContent = label;
+    }
+  }
+
+  function restoreLevelProgress(saved) {
+    if (state.stage === 1) {
+      const collected = new Set(saved.stage1CollectedIndices);
+      state.level.stars.forEach((star, index) => { star.collected = collected.has(index); });
+      state.collected = collected.size;
+    } else if (state.stage === 2) {
+      state.level.magicBalls.forEach((ball) => { ball.collected = saved.hats.includes(ball.id); });
+      state.level.door.open = saved.hats.length === MAGIC_HAT_TYPES.length;
+    } else {
+      state.level.foods.forEach((food) => { food.collected = saved.foods.includes(food.id); });
+      state.growthLevel = saved.foods.length;
+      state.growthFromScale = GROWTH_LEVELS[state.growthLevel].visualScale;
+      state.growthAnimation = 1;
+      state.level.door.open = state.growthLevel >= BAKERY_GATE_GROWTH;
+      state.level.exitDoor.open = state.growthLevel >= GROWTH_FOODS.length;
+    }
+    state.checkpointX = clamp(saved.checkpointX || 150, 150, WORLD.width - 240);
+    state.checkpointName = saved.checkpointName || (state.stage === 1 ? "Cave start" : state.stage === 2 ? "Crystal Cave start" : "Bakery start");
+    state.level.checkpoints.forEach((checkpoint) => { checkpoint.active = checkpoint.x < state.checkpointX; });
+    state.player.x = state.checkpointX;
+    state.player.y = WORLD.floorY - state.player.h - 4;
+    state.cameraX = clamp(state.player.x - 300, 0, WORLD.width - VIEW.width);
+  }
+
+  function resumeSavedAdventure() {
+    const saved = readSavedProgress();
+    if (!saved) return;
+    state.difficulty = saved.difficulty;
+    state.config = DIFFICULTIES[saved.difficulty];
+    const difficultyRadio = document.querySelector(`input[name="difficulty"][value="${saved.difficulty}"]`);
+    if (difficultyRadio) difficultyRadio.checked = true;
+    sounds.enabled = saved.soundEnabled;
+    state.reducedMotion = saved.reducedMotion;
+    state.stage1Stars = saved.stage1Stars;
+    state.stage1CollectedIndices = [...saved.stage1CollectedIndices];
+    state.hats = [...saved.hats];
+    state.foods = [...saved.foods];
+    state.growthLevel = saved.foods.length;
+    state.stage2Unlocked = saved.stage2Unlocked;
+    state.stage3Unlocked = saved.stage3Unlocked;
+    state.stage3Completed = saved.stage3Completed;
+    state.stage3Checkpoint = { ...saved.stage3Checkpoint };
+    prepareStage(saved.currentStage, false);
+    restoreLevelProgress(saved);
+    state.mode = "playing";
+    setScreen("game");
+    updateSoundButtons();
+    updateMotionButton();
+    updateHud();
+    showMessage(`Welcome back to Stage ${state.stage}! Your progress is safe.`, 2800);
+    sounds.ensureContext();
+  }
 
   // ---------------------------------------------------------------------------
   // UI state and accessible feedback
@@ -425,6 +681,7 @@
       title: ui.title,
       story: ui.story,
       transition: ui.transition,
+      bakeryTransition: ui.bakeryTransition,
       pause: ui.pause,
       victory: ui.victory,
       error: ui.error
@@ -470,6 +727,7 @@
     sounds.enabled = !sounds.enabled;
     if (sounds.enabled) sounds.ensureContext();
     updateSoundButtons();
+    if (state.mode !== "title") saveProgress();
   }
 
   function updateMotionButton() {
@@ -495,8 +753,10 @@
     }
 
     const inStage2 = state.stage === 2;
-    ui.starHud.hidden = inStage2;
+    const inStage3 = state.stage === 3;
+    ui.starHud.hidden = state.stage !== 1;
     ui.hatHud.hidden = !inStage2;
+    ui.foodHud.hidden = !inStage3;
 
     if (inStage2) {
       ui.hatCount.textContent = `${state.hats.length} / ${MAGIC_HAT_TYPES.length}`;
@@ -508,9 +768,20 @@
         slot.classList.toggle("is-collected", collected);
         slot.style.setProperty("--hat-color", type?.color || "#ffffff");
       });
-    } else {
+    } else if (state.stage === 1) {
       ui.stars.textContent = String(state.collected);
       ui.starTotal.textContent = `/ ${state.level.stars.length}`;
+    } else {
+      ui.foodCount.textContent = `${state.foods.length} / ${GROWTH_FOODS.length}`;
+      ui.growthCount.textContent = `${state.growthLevel} / ${GROWTH_FOODS.length}`;
+      ui.growthFill.style.width = `${(state.growthLevel / GROWTH_FOODS.length) * 100}%`;
+      ui.foodHud.classList.toggle("is-complete", state.growthLevel === GROWTH_FOODS.length && state.growthGlow > 0);
+      ui.foodSlots.querySelectorAll("[data-food]").forEach((slot) => {
+        const food = GROWTH_FOODS.find((item) => item.id === slot.dataset.food);
+        const collected = state.foods.includes(slot.dataset.food);
+        slot.classList.toggle("is-collected", collected);
+        slot.setAttribute("aria-label", `${food?.name || "Magical food"}: ${collected ? "collected" : "not collected"}`);
+      });
     }
 
     ui.checkpointStatus.textContent = state.checkpointName;
@@ -524,7 +795,7 @@
     if (section) {
       ui.section.textContent = section.name;
       if (state.lastSection && state.lastSection !== section.name && state.mode === "playing") {
-        const finalSection = state.stage === 1 ? "Rainbow Chamber" : "Magic Hat Gallery";
+        const finalSection = state.stage === 1 ? "Rainbow Chamber" : state.stage === 2 ? "Magic Hat Gallery" : "Rainbow Cake Finale";
         showMessage(section.name === finalSection ? "Almost there! A rainbow glow is close!" : `Welcome to the ${section.name}!`, 1900);
       }
       state.lastSection = section.name;
@@ -541,11 +812,26 @@
     if (stageNumber === 1 && resetStageProgress) {
       state.collected = 0;
       state.stage1Stars = 0;
+      state.stage1CollectedIndices = [];
       state.hats = [];
+      state.foods = [];
+      state.growthLevel = 0;
+      state.stage2Unlocked = false;
+      state.stage3Unlocked = false;
+      state.stage3Completed = false;
     }
-    if (stageNumber === 2 && resetStageProgress) state.hats = [];
+    if (stageNumber === 2 && resetStageProgress) {
+      state.hats = [];
+      state.foods = [];
+      state.growthLevel = 0;
+    }
+    if (stageNumber === 3 && resetStageProgress) {
+      state.foods = [];
+      state.growthLevel = 0;
+      state.stage3Checkpoint = { x: 150, name: "Bakery start" };
+    }
     state.checkpointX = 150;
-    state.checkpointName = stageNumber === 1 ? "Cave start" : "Crystal Cave start";
+    state.checkpointName = stageNumber === 1 ? "Cave start" : stageNumber === 2 ? "Crystal Cave start" : "Bakery start";
     state.cameraX = 0;
     state.time = 0;
     state.messageTimer = 0;
@@ -557,6 +843,9 @@
     state.hatBounce = 0;
     state.newHatPop = 0;
     state.transformation = null;
+    state.growthFromScale = GROWTH_LEVELS[state.growthLevel].visualScale;
+    state.growthAnimation = 1;
+    state.growthGlow = 0;
     input.left = false;
     input.right = false;
     input.jump = false;
@@ -576,6 +865,7 @@
       3200
     );
     sounds.ensureContext();
+    saveProgress();
   }
 
   function startStage2() {
@@ -589,6 +879,21 @@
       3300
     );
     sounds.ensureContext();
+    saveProgress();
+  }
+
+  function startStage3() {
+    prepareStage(3, true);
+    state.mode = "playing";
+    setScreen("game");
+    showMessage(
+      state.config.guidance
+        ? "Follow the sugar arrows to every magical treat!"
+        : "Collect magical food to help Sprinkles grow!",
+      3400
+    );
+    sounds.ensureContext();
+    saveProgress();
   }
 
   function returnToTitle() {
@@ -597,18 +902,15 @@
     state.config = DIFFICULTIES[state.difficulty];
     prepareStage(1, true);
     setScreen("title");
+    updateSavedAdventureButton();
   }
 
   function pauseGame() {
     if (state.mode !== "playing") return;
     state.mode = "paused";
     setScreen("pause");
-    document.getElementById("restartCheckpointButton").textContent = state.stage === 2
-      ? "Restart from Latest Checkpoint"
-      : "Restart from Latest Checkpoint";
-    document.getElementById("restartStageButton").textContent = state.stage === 2
-      ? "Restart Stage 2 from Beginning"
-      : "Restart Stage 1 from Beginning";
+    document.getElementById("restartCheckpointButton").textContent = "Restart from Latest Checkpoint";
+    document.getElementById("restartStageButton").textContent = `Restart Stage ${state.stage} from Beginning`;
     document.getElementById("resumeButton").focus();
   }
 
@@ -631,10 +933,12 @@
     setScreen("game");
     showMessage("Checkpoint progress kept! Sprinkles is ready.", 1900);
     updateHud();
+    saveProgress();
   }
 
   function restartCurrentStage() {
-    if (state.stage === 2) startStage2();
+    if (state.stage === 3) startStage3();
+    else if (state.stage === 2) startStage2();
     else startGame();
   }
 
@@ -706,21 +1010,21 @@
 
   function handleHorizontalDoorCollision(previousX) {
     const player = state.player;
-    const door = state.level.door;
-    if (door.open || door.y >= player.y + player.h || door.y + door.h <= player.y) return;
-
-    if (player.x + player.w > door.x && previousX + player.w <= door.x) {
-      player.x = door.x - player.w;
-      player.vx = 0;
-      showMessage(
-        state.stage === 2
-          ? `The rainbow exit needs all six hats. ${MAGIC_HAT_TYPES.length - state.hats.length} still to find!`
-          : "A crystal key nearby will open this friendly door!",
-        2200
-      );
-    } else if (player.x < door.x + door.w && previousX >= door.x + door.w) {
-      player.x = door.x + door.w;
-      player.vx = 0;
+    const doors = [state.level.door, state.level.exitDoor].filter(Boolean);
+    for (const door of doors) {
+      if (door.open || door.y >= player.y + player.h || door.y + door.h <= player.y) continue;
+      if (player.x + player.w > door.x && previousX + player.w <= door.x) {
+        player.x = door.x - player.w;
+        player.vx = 0;
+        let message = "A crystal key nearby will open this friendly door!";
+        if (state.stage === 2) message = `The rainbow exit needs all six hats. ${MAGIC_HAT_TYPES.length - state.hats.length} still to find!`;
+        if (state.stage === 3 && door.bakeryGate) message = `Sprinkles needs to grow a little more! Growth ${state.growthLevel} / ${door.growthRequirement}.`;
+        if (state.stage === 3 && door.stageExit) message = `The bakery exit needs every treat. ${GROWTH_FOODS.length - state.foods.length} still to find!`;
+        showMessage(message, 2400);
+      } else if (player.x < door.x + door.w && previousX >= door.x + door.w) {
+        player.x = door.x + door.w;
+        player.vx = 0;
+      }
     }
   }
 
@@ -779,7 +1083,7 @@
           player.coyote = 115;
           if (landingSpeed > 6.5) {
             player.landSquash = 1;
-            if (state.stage === 2 && state.hats.length) state.hatBounce = 1;
+            if (state.stage >= 2 && state.hats.length) state.hatBounce = 1;
           }
           break;
         }
@@ -866,11 +1170,17 @@
         sounds.checkpoint();
         showMessage("Crystal key found! The door is opening!", 2300);
       }
-    } else {
+    } else if (state.stage === 2) {
       for (const ball of state.level.magicBalls) {
         if (ball.collected) continue;
         const box = { x: ball.x - 25, y: ball.y - 25, w: 50, h: 50 };
         if (overlap(playerBox, box)) collectMagicBall(ball);
+      }
+    } else {
+      for (const food of state.level.foods) {
+        if (food.collected) continue;
+        const box = { x: food.x - 27, y: food.y - 27, w: 54, h: 54 };
+        if (overlap(playerBox, box)) collectGrowthFood(food);
       }
     }
 
@@ -881,17 +1191,21 @@
         state.level.checkpoints.forEach((other) => { other.active = other.x <= checkpoint.x; });
         checkpoint.active = true;
         state.checkpointX = checkpoint.x + 55;
-        state.checkpointName = `${state.stage === 1 ? "Cave" : "Crystal"} checkpoint ${state.level.checkpoints.filter((item) => item.active).length}`;
+        const checkpointPlace = state.stage === 1 ? "Cave" : state.stage === 2 ? "Crystal" : "Bakery oven";
+        state.checkpointName = `${checkpointPlace} checkpoint ${state.level.checkpoints.filter((item) => item.active).length}`;
+        if (state.stage === 3) state.stage3Checkpoint = { x: state.checkpointX, name: state.checkpointName };
         state.hearts = state.config.hearts;
         burst(checkpoint.x + 18, checkpoint.y + 25, ["#65e5cf", "#9f83ff", "#ffffff"], 24, 5.5);
         sounds.checkpoint();
         showMessage("You found a checkpoint! Hearts restored!", 2500);
+        saveProgress();
       }
     }
 
     if (overlap(playerBox, state.level.gem)) {
       if (state.stage === 1) completeStage1();
-      else if (state.hats.length === MAGIC_HAT_TYPES.length) winGame();
+      else if (state.stage === 2 && state.hats.length === MAGIC_HAT_TYPES.length) completeStage2();
+      else if (state.stage === 3 && state.foods.length === GROWTH_FOODS.length) winGame();
     }
   }
 
@@ -926,6 +1240,49 @@
       showMessage("You found every magic hat! The rainbow exit is open!", 3600);
     }
     updateHud();
+    saveProgress();
+  }
+
+  function collectGrowthFood(food) {
+    if (food.collected || state.foods.includes(food.id)) return;
+    const previousLevel = state.growthLevel;
+    food.collected = true;
+    state.foods.push(food.id);
+    state.foods = uniqueAllowed(state.foods, new Set(GROWTH_FOODS.map((item) => item.id))).slice(0, GROWTH_FOODS.length);
+    state.growthLevel = clamp(state.foods.length, 0, GROWTH_FOODS.length);
+    state.growthFromScale = GROWTH_LEVELS[previousLevel].visualScale;
+    state.growthAnimation = state.reducedMotion ? 1 : 0;
+    state.growthGlow = state.reducedMotion ? 450 : 1450;
+    state.player.collectGlow = 1;
+    burst(food.x, food.y, [food.color, food.accent, "#ffffff", "#ffd968"], state.reducedMotion ? 0 : 30, 6);
+    sounds.food();
+    sounds.grow();
+
+    const messages = [
+      "Sprinkles grew one size!",
+      `A magical ${food.name}!`,
+      "Yummy! Sprinkles grew!",
+      "Sprinkles is getting bigger!",
+      state.foods.length === 4 ? "Only two treats left!" : "Great collecting!"
+    ];
+    showMessage(state.foods.length === 1 ? messages[0] : messages[(state.foods.length - 1) % messages.length], 2400);
+
+    if (state.growthLevel >= BAKERY_GATE_GROWTH && !state.level.door.open) {
+      state.level.door.open = true;
+      burst(state.level.door.x, state.level.door.y + 100, ["#ff9dbd", "#ffe476", "#a1edcf", "#ffffff"], 34, 6);
+      sounds.openExit();
+      showMessage("Sprinkles is big enough to open the bakery gate!", 3200);
+    }
+    if (state.growthLevel === GROWTH_FOODS.length) {
+      state.level.exitDoor.open = true;
+      state.growthGlow = 5200;
+      burst(state.player.x + state.player.w / 2, state.player.y - 50, ["#ff6688", "#ffd55f", "#5ee0b7", "#58cfff", "#a475ed"], 54, 8);
+      sounds.maxGrowth();
+      sounds.openExit();
+      showMessage("Sprinkles reached maximum size! The bakery exit is open!", 3900);
+    }
+    updateHud();
+    saveProgress();
   }
 
   function updateHazards() {
@@ -933,7 +1290,7 @@
     const feetX = player.x + player.w / 2;
     const overLava = feetX > WORLD.lavaStart && feetX < WORLD.lavaEnd;
     if (overLava && player.y + player.h > WORLD.floorY + 1) {
-      safeReturn("Warm sparkle bounce! Sprinkles is ready to try again.");
+      safeReturn(state.stage === 3 ? "Jam sparkle bounce! Sprinkles found a safe bakery path." : "Warm sparkle bounce! Sprinkles is ready to try again.");
     }
   }
 
@@ -966,49 +1323,82 @@
   function completeStage1() {
     if (state.mode !== "playing") return;
     state.stage1Stars = state.collected;
+    state.stage2Unlocked = true;
     state.mode = "transition";
     ui.transitionStars.textContent = `${state.stage1Stars} / ${state.level.stars.length}`;
     sounds.checkpoint();
+    saveProgress(2);
     setScreen("transition");
     announce("Stage 1 complete. Something colorful is waiting deeper in the cave!");
     document.getElementById("enterStage2Button").focus();
   }
 
+  function completeStage2() {
+    if (state.mode !== "playing") return;
+    state.stage3Unlocked = true;
+    state.mode = "bakeryTransition";
+    ui.transitionHats.textContent = `${state.hats.length} / ${MAGIC_HAT_TYPES.length}`;
+    sounds.checkpoint();
+    saveProgress(3);
+    setScreen("bakeryTransition");
+    announce("Stage 2 complete. A delicious smell leads to a magical underground bakery!");
+    document.getElementById("enterStage3Button").focus();
+  }
+
   function winGame() {
     if (state.mode !== "playing") return;
     state.mode = "victory";
+    state.stage3Completed = true;
     state.player.collectGlow = 1;
     burst(state.level.gem.x + 35, state.level.gem.y + 40, ["#ff708e", "#ffd65b", "#6de1b7", "#67cfff", "#a47af1"], 60, 8);
     sounds.victory();
     ui.victoryStars.textContent = `${state.stage1Stars} / 20`;
     ui.victoryHats.textContent = `${state.hats.length} / ${MAGIC_HAT_TYPES.length}`;
+    ui.victoryFoods.textContent = `${state.foods.length} / ${GROWTH_FOODS.length}`;
+    ui.victoryGrowth.textContent = `${state.growthLevel} / ${GROWTH_FOODS.length}`;
     ui.victoryHatColors.innerHTML = MAGIC_HAT_TYPES
       .filter((hat) => state.hats.includes(hat.id))
       .map((hat) => `<span title="${hat.name} hat" style="--hat-color:${hat.color}"></span>`)
       .join("");
+    ui.victoryFoodIcons.innerHTML = GROWTH_FOODS
+      .map((food) => `<span role="img" aria-label="${food.name}" title="${food.name}">${food.icon}</span>`)
+      .join("");
     drawVictorySprinkles();
+    saveProgress(3);
     setScreen("victory");
-    announce("Sprinkles collected every magic hat and found the Rainbow Gem! The cave is glowing with color again!");
+    announce("Sprinkles found every magical treat, grew six times, and continued the Rainbow Gem adventure!");
     document.getElementById("playAgainButton").focus();
   }
 
   function updateTutorial() {
     const x = state.player.x;
-    const tutorials = state.stage === 1
-      ? [
+    let tutorials;
+    if (state.stage === 1) {
+      tutorials = [
           { id: "move", start: 250, end: 430, text: "Wonderful! Keep moving toward the glowing arrow." },
           { id: "jump", start: 830, end: 1000, text: "Press ↑, W, or Space to jump over the tiny gap!" },
           { id: "rocks", start: 1280, end: 1450, text: "Look for the ⚠ sign before a soft stone tumbles down." },
           { id: "lava", start: 2630, end: 2760, text: "The warm glow is clearly marked. Hop across the wide stones!" },
           { id: "key", start: 4480, end: 4650, text: "A crystal key will open the door ahead." }
-        ]
-      : [
+        ];
+    } else if (state.stage === 2) {
+      tutorials = [
           { id: "hat-ball", start: 270, end: 470, text: "Collect the magic ball to make a hat!" },
           { id: "hat-jumps", start: 1120, end: 1330, text: "Two colorful hats are waiting on the wide crystal steps." },
           { id: "hat-rocks", start: 2400, end: 2580, text: "Wait on the safe crystal patches when the ⚠ sign appears." },
           { id: "hat-lava", start: 3780, end: 3930, text: "The rainbow platforms move slowly. Take your time!" },
           { id: "hat-exit", start: 6100, end: 6320, text: "Missing a hat? You can always travel back to find it." }
         ];
+    } else {
+      tutorials = [
+        { id: "food-tutorial", start: 240, end: 470, text: "Collect magical food to help Sprinkles grow!" },
+        { id: "bakery-jumps", start: 1160, end: 1360, text: "Follow the frosting arrows across the wide bakery platforms." },
+        { id: "pastry-warning", start: 2380, end: 2540, text: "Wait on the safe sugar patch when the warning light appears." },
+        { id: "dessert-platforms", start: 3300, end: 3460, text: "The cake platforms move slowly and predictably. Take your time!" },
+        { id: "growth-gate", start: 5650, end: 5840, text: "The bakery gate opens at Growth 5. You can go back for any missed treat!" },
+        { id: "final-food", start: 6250, end: 6400, text: "One final magical treat is waiting near the rainbow exit!" }
+      ];
+    }
     for (const tutorial of tutorials) {
       if (!state.tutorialSeen.has(tutorial.id) && x >= tutorial.start && x <= tutorial.end) {
         state.tutorialSeen.add(tutorial.id);
@@ -1032,12 +1422,17 @@
     state.hatGlow = Math.max(0, state.hatGlow - dt);
     state.hatBounce = Math.max(0, state.hatBounce - 0.055 * step);
     state.newHatPop = Math.max(0, state.newHatPop - 0.04 * step);
+    state.growthGlow = Math.max(0, state.growthGlow - dt);
+    if (state.growthAnimation < 1) {
+      state.growthAnimation = Math.min(1, state.growthAnimation + dt / (state.reducedMotion ? 1 : 520));
+    }
     if (state.transformation) {
       state.transformation.life -= (state.reducedMotion ? 0.18 : 0.035) * step;
       if (state.transformation.life <= 0) state.transformation = null;
     }
 
-    const targetCamera = clamp(state.player.x - 360, 0, WORLD.width - VIEW.width);
+    const cameraOffset = state.stage === 3 ? GROWTH_LEVELS[state.growthLevel].cameraOffset : 0;
+    const targetCamera = clamp(state.player.x - 360 - cameraOffset, 0, WORLD.width - VIEW.width);
     state.cameraX = state.reducedMotion ? targetCamera : lerp(state.cameraX, targetCamera, 0.08 * step);
     state.returnFlash = Math.max(0, state.returnFlash - 0.035 * step);
 
@@ -1054,9 +1449,9 @@
   // ---------------------------------------------------------------------------
   function drawCaveBackground(cameraX = state.cameraX) {
     const gradient = ctx.createLinearGradient(0, 0, 0, VIEW.height);
-    gradient.addColorStop(0, state.stage === 2 ? "#171451" : "#191042");
-    gradient.addColorStop(0.55, state.stage === 2 ? "#3b2775" : "#302166");
-    gradient.addColorStop(1, state.stage === 2 ? "#172d58" : "#18113e");
+    gradient.addColorStop(0, state.stage === 3 ? "#4b2445" : state.stage === 2 ? "#171451" : "#191042");
+    gradient.addColorStop(0.55, state.stage === 3 ? "#70435c" : state.stage === 2 ? "#3b2775" : "#302166");
+    gradient.addColorStop(1, state.stage === 3 ? "#2a2447" : state.stage === 2 ? "#172d58" : "#18113e");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, VIEW.width, VIEW.height);
 
@@ -1067,7 +1462,8 @@
       const y = 175 + seededWave(i) * 320;
       const glow = ctx.createRadialGradient(x, y, 0, x, y, 240);
       const stage2Glow = ["rgba(255, 106, 151, .18)", "rgba(91, 222, 188, .18)", "rgba(95, 194, 255, .18)"][i % 3];
-      glow.addColorStop(0, state.stage === 2 ? stage2Glow : (i % 2 ? "rgba(95, 215, 207, .13)" : "rgba(173, 116, 238, .15)"));
+      const bakeryGlow = ["rgba(255, 190, 105, .24)", "rgba(255, 126, 170, .2)", "rgba(165, 225, 201, .18)"][i % 3];
+      glow.addColorStop(0, state.stage === 3 ? bakeryGlow : state.stage === 2 ? stage2Glow : (i % 2 ? "rgba(95, 215, 207, .13)" : "rgba(173, 116, 238, .15)"));
       glow.addColorStop(1, "rgba(30, 20, 70, 0)");
       ctx.fillStyle = glow;
       ctx.fillRect(x - 240, y - 240, 480, 480);
@@ -1086,7 +1482,7 @@
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = "#120c35";
+    ctx.fillStyle = state.stage === 3 ? "#2b1834" : "#120c35";
     ctx.beginPath();
     ctx.moveTo(0, 0);
     for (let x = -80; x <= VIEW.width + 120; x += 110) {
@@ -1113,9 +1509,15 @@
       const x = crystal.x - state.cameraX * 0.78;
       if (x < -120 || x > VIEW.width + 120) continue;
       ctx.save();
-      ctx.globalAlpha = state.stage === 2 ? 0.62 : 0.38;
+      ctx.globalAlpha = state.stage === 2 ? 0.62 : state.stage === 3 ? 0.48 : 0.38;
       const rainbowColors = ["#ff6d8d", "#ffb44d", "#ffe05d", "#55df9b", "#59c8ff", "#aa7cf3"];
-      drawCrystal(x, crystal.y, crystal.size, state.stage === 2 ? rainbowColors[BACKGROUND_CRYSTALS.indexOf(crystal) % rainbowColors.length] : crystal.color, false);
+      const bakeryColors = ["#ffb069", "#ff92b5", "#ffe17b", "#8edbc7", "#b78bef", "#7fc9ee"];
+      const color = state.stage === 2
+        ? rainbowColors[BACKGROUND_CRYSTALS.indexOf(crystal) % rainbowColors.length]
+        : state.stage === 3
+          ? bakeryColors[BACKGROUND_CRYSTALS.indexOf(crystal) % bakeryColors.length]
+          : crystal.color;
+      drawCrystal(x, crystal.y, crystal.size, color, false);
       ctx.restore();
     }
   }
@@ -1154,11 +1556,11 @@
 
     ctx.save();
     const glow = ctx.createLinearGradient(0, WORLD.floorY - 12, 0, VIEW.height);
-    glow.addColorStop(0, "#ffca5c");
-    glow.addColorStop(0.16, "#ff8557");
-    glow.addColorStop(1, "#a93268");
+    glow.addColorStop(0, state.stage === 3 ? "#ff9ec2" : "#ffca5c");
+    glow.addColorStop(0.16, state.stage === 3 ? "#d94f82" : "#ff8557");
+    glow.addColorStop(1, state.stage === 3 ? "#6f285f" : "#a93268");
     ctx.fillStyle = glow;
-    ctx.shadowColor = "#ff945e";
+    ctx.shadowColor = state.stage === 3 ? "#ff8eb8" : "#ff945e";
     ctx.shadowBlur = 28;
     ctx.beginPath();
     ctx.moveTo(x, VIEW.height);
@@ -1172,7 +1574,7 @@
     ctx.fill();
 
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = "rgba(255, 239, 151, .72)";
+    ctx.strokeStyle = state.stage === 3 ? "rgba(255, 222, 237, .78)" : "rgba(255, 239, 151, .72)";
     ctx.lineWidth = 4;
     ctx.setLineDash([18, 15]);
     ctx.beginPath();
@@ -1191,7 +1593,24 @@
       if (x > VIEW.width + 80 || x + platform.w < -80) continue;
 
       const topGradient = ctx.createLinearGradient(0, platform.y, 0, platform.y + Math.min(platform.h, 90));
-      if (platform.kind === "rainbow") {
+      if (platform.kind === "bakery-ground") {
+        topGradient.addColorStop(0, "#f7c57a");
+        topGradient.addColorStop(0.13, "#c47855");
+        topGradient.addColorStop(1, "#593451");
+      } else if (platform.kind === "cookie") {
+        topGradient.addColorStop(0, "#f5bd6e");
+        topGradient.addColorStop(0.2, "#cf7f45");
+        topGradient.addColorStop(1, "#6e3d4b");
+      } else if (platform.kind === "frosting") {
+        topGradient.addColorStop(0, "#fff2f8");
+        topGradient.addColorStop(0.2, "#ff9fc5");
+        topGradient.addColorStop(1, "#8b4f80");
+      } else if (platform.kind === "cake") {
+        topGradient.addColorStop(0, "#fff0a8");
+        topGradient.addColorStop(0.22, "#ffb265");
+        topGradient.addColorStop(0.55, "#dc6a86");
+        topGradient.addColorStop(1, "#713e68");
+      } else if (platform.kind === "rainbow") {
         topGradient.addColorStop(0, "#a6fff0");
         topGradient.addColorStop(0.18, "#6fc9dd");
         topGradient.addColorStop(0.55, "#7765bb");
@@ -1223,6 +1642,14 @@
       ctx.fillStyle = "rgba(255,255,255,.13)";
       roundedRectPath(ctx, x + 8, platform.y + 7, Math.max(0, platform.w - 16), 6, 3);
       ctx.fill();
+      if (state.stage === 3 && platform.kind === "cookie") {
+        ctx.fillStyle = "rgba(91, 45, 42, .62)";
+        for (let chip = 0; chip < Math.min(8, Math.floor(platform.w / 55)); chip += 1) {
+          ctx.beginPath();
+          ctx.arc(x + 28 + chip * 51, platform.y + 15 + (chip % 2) * 7, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
     }
   }
 
@@ -1230,7 +1657,9 @@
     if (!state.config.guidance) return;
     const arrows = state.stage === 1
       ? [[520, 560], [930, 560], [1480, 560], [2300, 560], [2860, 485], [3200, 420], [3520, 485], [3830, 485], [4300, 560], [4820, 560], [5450, 555], [6050, 550]]
-      : [[500, 560], [960, 560], [1460, 450], [2100, 490], [2600, 560], [3200, 560], [3970, 485], [4380, 425], [4780, 485], [5120, 450], [5500, 560], [6100, 555], [6680, 555]];
+      : state.stage === 2
+        ? [[500, 560], [960, 560], [1460, 450], [2100, 490], [2600, 560], [3200, 560], [3970, 485], [4380, 425], [4780, 485], [5120, 450], [5500, 560], [6100, 555], [6680, 555]]
+        : [[500, 560], [980, 560], [1470, 475], [2150, 500], [2650, 560], [3250, 560], [3520, 475], [3980, 425], [4380, 475], [4740, 415], [5300, 560], [6100, 560], [6500, 540], [7200, 560]];
     ctx.save();
     ctx.fillStyle = "rgba(255, 245, 151, .82)";
     ctx.strokeStyle = "rgba(84, 58, 145, .75)";
@@ -1253,12 +1682,33 @@
           ctx.stroke();
         }
       }
+    } else if (state.stage === 3) {
+      const target = state.level.foods.find((food) => !food.collected);
+      if (target) {
+        const targetX = target.x - state.cameraX;
+        if (targetX > -80 && targetX < VIEW.width + 80) {
+          ctx.strokeStyle = target.color;
+          ctx.setLineDash([7, 10]);
+          ctx.beginPath();
+          ctx.arc(targetX, target.y, 43, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
     }
     ctx.restore();
   }
 
   function drawWorldSigns() {
-    const signs = state.stage === 1
+    const signs = state.stage === 3
+      ? [
+          { x: 320, y: 475, icon: "FOOD +", label: "MAGICAL FOOD GROWS" },
+          { x: 1200, y: 470, icon: "JUMP", label: "WIDE BAKERY STEPS" },
+          { x: 2380, y: 475, icon: "!", label: "PASTRY WARNING" },
+          { x: 3335, y: 475, icon: "UP / DOWN", label: "MOVING DESSERTS" },
+          { x: 5750, y: 475, icon: "5 / 6", label: "GROW TO OPEN GATE" },
+          { x: 6970, y: 475, icon: "6 / 6", label: "TREATS OPEN EXIT" }
+        ]
+      : state.stage === 1
       ? [
           { x: 290, y: 475, icon: "← A   D →", label: "MOVE" },
           { x: 875, y: 472, icon: "↑  SPACE", label: "JUMP" },
@@ -1354,6 +1804,98 @@
     }
   }
 
+  function drawBakeryDecor() {
+    if (state.stage !== 3) return;
+    ctx.save();
+    for (let i = 0; i < 12; i += 1) {
+      const worldX = 320 + i * 650;
+      const x = worldX - state.cameraX * 0.9;
+      if (x < -90 || x > VIEW.width + 90) continue;
+      ctx.strokeStyle = "rgba(255, 221, 146, .45)";
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 92); ctx.stroke();
+      ctx.fillStyle = "#ffd77b";
+      ctx.shadowColor = "#ffb55f";
+      ctx.shadowBlur = 24;
+      ctx.beginPath(); ctx.arc(x, 110, 18, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(255, 247, 234, .12)";
+    for (let i = 0; i < 14; i += 1) {
+      const x = ((i * 331 - state.cameraX * 0.25) % 1700 + 1700) % 1700 - 120;
+      const y = 210 + (i % 5) * 72;
+      ctx.beginPath();
+      ctx.arc(x, y, 26, 0, Math.PI * 2);
+      ctx.arc(x + 25, y + 4, 20, 0, Math.PI * 2);
+      ctx.arc(x - 25, y + 7, 18, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawFoodShape(food, x, y, scale = 1) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(89, 46, 75, .75)";
+
+    if (food.style === "cupcake") {
+      ctx.fillStyle = "#ffcf7d";
+      ctx.beginPath(); ctx.moveTo(-20, 4); ctx.lineTo(20, 4); ctx.lineTo(14, 30); ctx.lineTo(-14, 30); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#ff8fb8";
+      ctx.beginPath(); ctx.arc(0, 0, 21, Math.PI, 0); ctx.quadraticCurveTo(18, -18, 4, -19); ctx.quadraticCurveTo(-4, -29, -12, -17); ctx.quadraticCurveTo(-24, -10, -20, 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#f05270"; ctx.beginPath(); ctx.arc(2, -25, 7, 0, Math.PI * 2); ctx.fill();
+    } else if (food.style === "cookie") {
+      ctx.fillStyle = "#dfa05c"; ctx.beginPath(); ctx.arc(0, 0, 27, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#71402d";
+      [[-11,-9],[10,-13],[13,8],[-8,13],[0,1]].forEach(([cx, cy]) => { ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill(); });
+    } else if (food.style === "donut") {
+      ctx.fillStyle = "#be784e"; ctx.beginPath(); ctx.arc(0, 0, 27, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#ff9fc8"; ctx.beginPath(); ctx.arc(0, -3, 25, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#5c3751"; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+      ["#ffe26d", "#7ee2cb", "#ffffff", "#8fc8ff"].forEach((color, i) => { ctx.fillStyle = color; ctx.fillRect(-17 + i * 10, -12 + (i % 2) * 14, 7, 3); });
+    } else if (food.style === "muffin") {
+      ctx.fillStyle = "#d8b8ff"; ctx.beginPath(); ctx.moveTo(-19, 2); ctx.lineTo(19, 2); ctx.lineTo(13, 30); ctx.lineTo(-13, 30); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#7d83dc"; ctx.beginPath(); ctx.arc(0, -1, 24, Math.PI, 0); ctx.quadraticCurveTo(20, -22, 2, -22); ctx.quadraticCurveTo(-18, -24, -24, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#424caa"; [[-11,-10],[7,-14],[13,-2],[-4,0]].forEach(([cx,cy]) => { ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill(); });
+    } else if (food.style === "croissant") {
+      ctx.fillStyle = "#f2b65d";
+      ctx.beginPath(); ctx.arc(0, 4, 28, Math.PI * 1.08, Math.PI * 1.92); ctx.arc(0, 7, 15, Math.PI * 1.9, Math.PI * 1.1, true); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = "#d98c42"; ctx.lineWidth = 4; [-12, 0, 12].forEach((cx) => { ctx.beginPath(); ctx.arc(cx, 0, 10, 0.4, 2.7); ctx.stroke(); });
+    } else {
+      ctx.fillStyle = "#fff0bd"; ctx.beginPath(); ctx.moveTo(-24, -22); ctx.lineTo(22, -12); ctx.lineTo(22, 27); ctx.lineTo(-24, 27); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ["#ff829f", "#ffd45f", "#68dcb9", "#6bc9f0", "#a67be8"].forEach((color, i) => { ctx.fillStyle = color; ctx.fillRect(-22, -13 + i * 8, 42, 5); });
+      ctx.fillStyle = "#fff8f0"; ctx.beginPath(); ctx.moveTo(-24, -22); ctx.quadraticCurveTo(0, -34, 22, -12); ctx.lineTo(19, -4); ctx.quadraticCurveTo(-2, -18, -24, -13); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ff678f"; ctx.beginPath(); ctx.arc(2, -27, 6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawGrowthFoods() {
+    if (state.stage !== 3) return;
+    for (const food of state.level.foods) {
+      if (food.collected) continue;
+      const x = food.x - state.cameraX;
+      if (x < -70 || x > VIEW.width + 70) continue;
+      const bob = state.reducedMotion ? 0 : Math.sin(state.time * 0.003 + food.phase) * 8;
+      const pulse = state.reducedMotion ? 1 : 1 + Math.sin(state.time * 0.004 + food.phase) * 0.06;
+      ctx.save();
+      ctx.shadowColor = food.color;
+      ctx.shadowBlur = 22;
+      drawFoodShape(food, x, food.y + bob, pulse);
+      ctx.fillStyle = "rgba(255,255,255,.9)";
+      for (let i = 0; i < 3; i += 1) {
+        const angle = state.time * 0.0012 + food.phase + i * Math.PI * 2 / 3;
+        drawStarPath(ctx, x + Math.cos(angle) * 38, food.y + bob + Math.sin(angle) * 32, 4, 1.6, 4);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
   function drawMagicTransformation() {
     if (!state.transformation) return;
     const type = MAGIC_HAT_TYPES.find((hat) => hat.id === state.transformation.id);
@@ -1377,6 +1919,25 @@
     for (const checkpoint of state.level.checkpoints) {
       const x = checkpoint.x - state.cameraX;
       if (x < -80 || x > VIEW.width + 80) continue;
+      if (state.stage === 3) {
+        ctx.save();
+        ctx.fillStyle = checkpoint.active ? "#ffd27d" : "#8f5870";
+        ctx.strokeStyle = checkpoint.active ? "#fff2ba" : "#e8bfd0";
+        ctx.lineWidth = 4;
+        roundedRectPath(ctx, x - 30, checkpoint.y + 5, 60, 76, 14);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#3d2942";
+        roundedRectPath(ctx, x - 20, checkpoint.y + 20, 40, 34, 8);
+        ctx.fill();
+        ctx.fillStyle = checkpoint.active ? "#ffb061" : "#70465d";
+        ctx.beginPath(); ctx.arc(x, checkpoint.y + 37, 12, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#fff7df";
+        ctx.font = "900 11px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillText(checkpoint.active ? "OVEN SAVED" : "OVEN CHECKPOINT", x, checkpoint.y - 10);
+        ctx.restore();
+        continue;
+      }
       const color = checkpoint.active ? "#62e4c9" : "#9d82e9";
       const glow = checkpoint.active && !state.reducedMotion ? 1 + Math.sin(state.time * 0.005) * 0.15 : 1;
       ctx.save();
@@ -1413,16 +1974,17 @@
       }
     }
 
-    const door = state.level.door;
-    const doorX = door.x - state.cameraX;
-    if (doorX > -100 && doorX < VIEW.width + 100) {
+    const doors = [state.level.door, state.level.exitDoor].filter(Boolean);
+    for (const door of doors) {
+      const doorX = door.x - state.cameraX;
+      if (doorX <= -100 || doorX >= VIEW.width + 100) continue;
       const openAmount = door.open ? 1 : 0;
       ctx.save();
       ctx.globalAlpha = door.open ? 0.28 : 0.95;
-      ctx.fillStyle = state.stage === 2 ? "#b18af2" : "#80e4d2";
-      ctx.strokeStyle = "#d9fff9";
+      ctx.fillStyle = state.stage === 3 ? (door.stageExit ? "#ffcf70" : "#ff91b6") : state.stage === 2 ? "#b18af2" : "#80e4d2";
+      ctx.strokeStyle = "#fff7e3";
       ctx.lineWidth = 4;
-      ctx.shadowColor = state.stage === 2 ? "#ffcc72" : "#78e8d5";
+      ctx.shadowColor = state.stage === 3 ? "#ffb368" : state.stage === 2 ? "#ffcc72" : "#78e8d5";
       ctx.shadowBlur = 18;
       for (let i = 0; i < 4; i += 1) {
         const y = door.y + i * 55 - openAmount * 105;
@@ -1435,13 +1997,16 @@
         ctx.fill();
         ctx.stroke();
       }
-      if (state.stage === 2) {
+      if (state.stage >= 2) {
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
         ctx.fillStyle = "#fff6cd";
         ctx.font = "900 12px Trebuchet MS";
         ctx.textAlign = "center";
-        ctx.fillText(door.open ? "RAINBOW EXIT OPEN" : `${state.hats.length} / 6 HATS`, doorX + door.w / 2, door.y - 20);
+        let label = door.open ? "RAINBOW EXIT OPEN" : `${state.hats.length} / 6 HATS`;
+        if (state.stage === 3 && door.bakeryGate) label = door.open ? "BAKERY GATE OPEN" : `${state.growthLevel} / ${door.growthRequirement} GROWTH`;
+        if (state.stage === 3 && door.stageExit) label = door.open ? "BAKERY EXIT OPEN" : `${state.foods.length} / 6 TREATS`;
+        ctx.fillText(label, doorX + door.w / 2, door.y - 20);
       }
       ctx.restore();
     }
@@ -1481,6 +2046,27 @@
         ctx.save();
         ctx.translate(x, rock.y + rock.size / 2);
         ctx.rotate(state.reducedMotion ? 0 : state.time * 0.0018);
+        if (state.stage === 3) {
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "#fff0c5";
+          ctx.shadowColor = "rgba(40, 15, 32, .4)";
+          ctx.shadowBlur = 12;
+          if (rock.pastryStyle === "cookie") {
+            ctx.fillStyle = "#d99755";
+            ctx.beginPath(); ctx.arc(0, 0, rock.size / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#6f3e31";
+            [[-10,-9],[11,-12],[14,10],[-10,13],[0,1]].forEach(([cx,cy]) => { ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill(); });
+          } else {
+            ctx.fillStyle = "#e6aa5d";
+            roundedRectPath(ctx, -rock.size / 2, -rock.size * .35, rock.size, rock.size * .7, 20);
+            ctx.fill(); ctx.stroke();
+            ctx.strokeStyle = "#bd7342";
+            ctx.lineWidth = 3;
+            [-14, 0, 14].forEach((sx) => { ctx.beginPath(); ctx.moveTo(sx - 5, -13); ctx.lineTo(sx + 5, 13); ctx.stroke(); });
+          }
+          ctx.restore();
+          continue;
+        }
         ctx.fillStyle = "#b7a9c9";
         ctx.strokeStyle = "#e8def2";
         ctx.lineWidth = 4;
@@ -1639,6 +2225,16 @@
     context.restore();
   }
 
+  function getGrowthVisualScale() {
+    if (state.stage !== 3) return 1;
+    const target = GROWTH_LEVELS[state.growthLevel].visualScale;
+    if (state.reducedMotion || state.growthAnimation >= 1) return target;
+    const progress = clamp(state.growthAnimation, 0, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const overshoot = Math.sin(progress * Math.PI) * 0.055;
+    return lerp(state.growthFromScale, target, eased) + overshoot;
+  }
+
   function drawSprinkles(x, y, player = state.player, scale = 1) {
     const walking = player.grounded && Math.abs(player.vx) > 0.45;
     const bob = !state.reducedMotion && walking ? Math.sin(player.steps * 0.17) * 2.5 : 0;
@@ -1648,14 +2244,26 @@
     const blink = Math.floor(state.time / 2700) % 6 === 0 && (state.time % 2700) < 120;
     const legSwing = walking ? Math.sin(player.steps * 0.2) * 5 : 0;
 
+    const visualScale = player === state.player ? getGrowthVisualScale() : 1;
+    const renderScale = scale * visualScale;
     ctx.save();
-    ctx.translate(x + player.w / 2, y + player.h / 2 + bob + idle);
-    ctx.scale(player.facing * scale * squashX, scale * squashY);
+    // Scale around the physics ground anchor, not the sprite center. The hitbox
+    // remains 58x62 while the artwork grows upward from the platform surface.
+    ctx.translate(x + player.w / 2, y + player.h + bob + idle);
+    ctx.scale(player.facing * renderScale * squashX, renderScale * squashY);
+    // The drawn paws end at local y=50, so this keeps that exact point on the
+    // physics bottom regardless of visual scale.
+    ctx.translate(0, -50);
 
     if (player.invulnerable > 0) ctx.globalAlpha = 0.58 + Math.sin(state.time * 0.02) * 0.22;
     if (player.collectGlow > 0) {
       ctx.shadowColor = "#ffe26f";
       ctx.shadowBlur = 24 * player.collectGlow;
+    }
+    if (state.stage === 3 && state.growthGlow > 0) {
+      const growthColors = ["#ff7da6", "#ffd568", "#76dfbd", "#6bcaf1", "#aa7eea"];
+      ctx.shadowColor = growthColors[Math.floor(state.time / 180) % growthColors.length];
+      ctx.shadowBlur = state.growthLevel === GROWTH_FOODS.length ? 30 : 20;
     }
 
     // Tail
@@ -1768,7 +2376,10 @@
     ctx.beginPath(); ctx.moveTo(-20, 10); ctx.quadraticCurveTo(0, 17, 20, 10); ctx.stroke();
     ctx.fillStyle = "#ffe169";
     ctx.beginPath(); ctx.arc(0, 15, 5, 0, Math.PI * 2); ctx.fill();
-    if (state.stage === 2 && state.hats.length) drawHatStack(ctx, state.hats);
+    if (state.stage >= 2 && state.hats.length) {
+      const visibleHats = state.stage === 3 ? state.hats.slice(-1) : state.hats;
+      drawHatStack(ctx, visibleHats, -47, state.stage === 3 ? 0.7 : 0.76);
+    }
     ctx.restore();
   }
 
@@ -1782,8 +2393,8 @@
     victoryContext.clearRect(0, 0, ui.victoryCatCanvas.width, ui.victoryCatCanvas.height);
     victoryContext.save();
     // The smaller celebration scale keeps all six hats inside the result canvas.
-    victoryContext.translate(130, 196);
-    victoryContext.scale(1.15, 1.15);
+    victoryContext.translate(ui.victoryCatCanvas.width / 2, ui.victoryCatCanvas.height - 56);
+    victoryContext.scale(1.42, 1.42);
 
     victoryContext.strokeStyle = "#8a67da";
     victoryContext.lineWidth = 11;
@@ -1818,7 +2429,9 @@
     victoryContext.lineWidth = 2;
     victoryContext.beginPath(); victoryContext.arc(-4, -2, 5, 0.05, 1.25); victoryContext.stroke();
     victoryContext.beginPath(); victoryContext.arc(4, -2, 5, 1.9, 3.1); victoryContext.stroke();
-    drawHatStack(victoryContext, state.hats, -47, 0.72);
+    // Stage 3 keeps the newest hat visible on Sprinkles while the complete
+    // inventory remains represented by the result chips below.
+    drawHatStack(victoryContext, state.hats.slice(-1), -47, 0.76);
     victoryContext.restore();
   }
 
@@ -1854,6 +2467,7 @@
 
   function drawGame() {
     drawCaveBackground();
+    drawBakeryDecor();
     drawBackgroundCrystals();
     drawLava();
     drawPlatforms();
@@ -1861,6 +2475,7 @@
     drawWorldSigns();
     drawStars();
     drawMagicBalls();
+    drawGrowthFoods();
     drawCheckpoints();
     drawKeyAndDoor();
     drawRocks();
@@ -1919,7 +2534,10 @@
     heldKeys.clear();
     touchHeld.clear();
     syncInput();
-    if (state.mode === "playing") pauseGame();
+    if (state.mode === "playing") {
+      saveProgress();
+      pauseGame();
+    }
   });
 
   window.addEventListener("resize", updateViewportLayout, { passive: true });
@@ -1927,7 +2545,8 @@
   window.visualViewport?.addEventListener("resize", updateViewportLayout, { passive: true });
   window.visualViewport?.addEventListener("scroll", updateViewportLayout, { passive: true });
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) updateViewportLayout();
+    if (document.hidden) saveProgress();
+    else updateViewportLayout();
   });
 
   document.querySelectorAll(".touch-button").forEach((button) => {
@@ -1965,6 +2584,8 @@
 
   document.getElementById("continueButton").addEventListener("click", startGame);
   document.getElementById("enterStage2Button").addEventListener("click", startStage2);
+  document.getElementById("enterStage3Button").addEventListener("click", startStage3);
+  ui.continueSaved.addEventListener("click", resumeSavedAdventure);
   document.getElementById("pauseButton").addEventListener("click", pauseGame);
   document.getElementById("resumeButton").addEventListener("click", resumeGame);
   document.getElementById("restartCheckpointButton").addEventListener("click", restartFromCheckpoint);
@@ -1973,6 +2594,7 @@
   document.getElementById("playAgainButton").addEventListener("click", startGame);
   document.getElementById("replayStage1Button").addEventListener("click", startGame);
   document.getElementById("replayStage2Button").addEventListener("click", startStage2);
+  document.getElementById("replayStage3Button").addEventListener("click", startStage3);
   document.getElementById("victoryTitleButton").addEventListener("click", returnToTitle);
   document.getElementById("errorRestartButton").addEventListener("click", () => window.location.reload());
   ui.titleSound.addEventListener("click", toggleSound);
@@ -1988,6 +2610,7 @@
   ui.motion.addEventListener("click", () => {
     state.reducedMotion = !state.reducedMotion;
     updateMotionButton();
+    if (state.mode !== "title") saveProgress();
   });
 
   // ---------------------------------------------------------------------------
@@ -1998,7 +2621,7 @@
       const dt = state.lastTime ? Math.min(40, timestamp - state.lastTime) : 16.67;
       state.lastTime = timestamp;
       if (state.mode === "playing") update(dt);
-      else if (["title", "story", "transition", "victory"].includes(state.mode)) state.time += dt;
+      else if (["title", "story", "transition", "bakeryTransition", "victory"].includes(state.mode)) state.time += dt;
       render();
       requestAnimationFrame(gameLoop);
     } catch (error) {
@@ -2019,5 +2642,6 @@
   updateHud();
   updateViewportLayout();
   setScreen("title");
+  updateSavedAdventureButton();
   requestAnimationFrame(gameLoop);
 })();

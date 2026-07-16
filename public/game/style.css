@@ -445,6 +445,9 @@ kbd {
 .transition-trail span:nth-child(5) { color: #ffd45e; }
 .transition-score { width: fit-content; margin: 18px auto 26px; padding: 11px 18px; border-radius: 999px; color: #59448c; background: #eee8ff; font-weight: 900; }
 .transition-score span { color: var(--gold); }
+.bakery-transition-screen { background: radial-gradient(circle at 50% 35%, rgba(255, 184, 102, .3), transparent 34%), rgba(52, 22, 57, .88); }
+.bakery-trail span:nth-child(3) { transform: translateY(-7px); }
+.saved-adventure-button { width: min(100%, 320px); margin: 8px auto 0; }
 
 .hud {
   position: absolute;
@@ -463,6 +466,7 @@ kbd {
 
 .hud-pill,
 .hat-hud,
+.food-hud,
 .checkpoint-hud,
 .progress-wrap,
 .hud-button {
@@ -480,6 +484,7 @@ kbd {
   border-radius: 16px;
   color: white;
 }
+.hud-pill[hidden] { display: none; }
 
 .hearts { gap: 3px; color: #ff6f9d; font-size: clamp(.8rem, 1.5vw, 1.35rem); }
 .heart-empty { color: rgba(255,255,255,.23); }
@@ -517,6 +522,26 @@ kbd {
 .hat-slots span.is-collected { border-style: solid; border-color: rgba(255,255,255,.8); background: var(--hat-color); box-shadow: 0 0 12px var(--hat-color); transform: translateY(-2px) rotate(-3deg); }
 .hat-slots span.is-collected::after { color: white; text-shadow: 0 1px 2px rgba(0,0,0,.22); }
 .hat-hud.is-complete { box-shadow: 0 0 20px rgba(255, 222, 105, .7), 0 7px 20px rgba(8, 4, 30, .25); }
+
+.food-hud {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 4px 9px;
+  min-height: clamp(44px, 5vw, 58px);
+  padding: 5px 9px;
+  border-radius: 16px;
+  color: white;
+}
+.food-hud[hidden] { display: none; }
+.food-hud-label { display: grid; min-width: 104px; font-size: clamp(.58rem, .78vw, .72rem); font-weight: 900; line-height: 1.25; }
+.food-hud-label b { color: #ffe078; }
+.food-slots { display: grid; grid-template-columns: repeat(6, minmax(19px, 27px)); gap: 3px; }
+.food-slots span { display: grid; aspect-ratio: 1; place-items: center; border: 2px dashed rgba(255,255,255,.28); border-radius: 8px; opacity: .34; background: rgba(255,255,255,.08); filter: grayscale(1); font-size: clamp(.72rem, 1.2vw, 1rem); transition: transform .24s ease, opacity .24s ease, filter .24s ease; }
+.food-slots span.is-collected { border-style: solid; border-color: rgba(255,255,255,.8); opacity: 1; background: rgba(255,255,255,.2); filter: none; transform: translateY(-2px) rotate(-3deg); }
+.growth-meter { grid-column: 1 / -1; overflow: hidden; height: 5px; border-radius: 99px; background: rgba(255,255,255,.18); }
+.growth-meter span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ff8faf, #ffd86a, #78dfbd, #65c9ed, #aa7ceb); transition: width .3s ease; }
+.food-hud.is-complete { box-shadow: 0 0 22px rgba(255, 213, 95, .75), 0 7px 20px rgba(8, 4, 30, .25); }
 
 .checkpoint-hud {
   display: grid;
@@ -594,6 +619,11 @@ kbd {
 .hats-score > span { color: #a777ef; }
 .victory-hat-colors { position: relative; z-index: 1; display: flex; justify-content: center; gap: 7px; margin: 4px 0 14px; }
 .victory-hat-colors span { width: 25px; aspect-ratio: 1; border: 2px solid white; border-radius: 50%; background: var(--hat-color); box-shadow: 0 4px 8px rgba(48,25,93,.2); }
+.victory-food-summary { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin: 4px 0 14px; padding: 8px 12px; border-radius: 18px; background: #fff8e9; }
+.victory-food-score { display: grid; color: #604474; text-align: center; }
+.victory-food-score b { font-size: 1.2rem; }
+.victory-food-score small { font-size: .65rem; font-weight: 900; }
+.victory-food-icons { display: flex; justify-content: center; gap: 5px; font-size: 1.35rem; }
 .victory-actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; }
 .victory-card .primary-button, .victory-card .secondary-button, .victory-card .text-button { margin: 0; }
 .victory-card .primary-button { min-width: 180px; }
@@ -651,6 +681,10 @@ kbd {
   .hat-hud-label small { display: none; }
   .hat-slots { grid-template-columns: repeat(6, 19px); gap: 2px; }
   .hat-slots span { border-radius: 6px; }
+  .food-hud { min-height: 38px; padding: 3px 6px; border-radius: 11px; gap: 2px 5px; }
+  .food-hud-label { min-width: 70px; font-size: .57rem; }
+  .food-slots { grid-template-columns: repeat(6, 17px); gap: 1px; }
+  .food-slots span { border-radius: 5px; font-size: .65rem; }
 }
 
 @media (pointer: coarse) and (max-height: 500px) {
@@ -667,6 +701,11 @@ kbd {
   .progress-track { height: 6px; }
   .hat-hud { min-height: 32px; padding: 2px 5px; }
   .hat-slots { grid-template-columns: repeat(6, 14px); }
+  .food-hud { min-height: 32px; padding: 2px 4px; }
+  .food-hud-label { min-width: 60px; font-size: .5rem; }
+  .food-slots { grid-template-columns: repeat(6, 14px); }
+  .food-slots span { font-size: .55rem; }
+  .growth-meter { height: 3px; }
   .message-bubble { top: 39px; padding: 7px 12px; font-size: .7rem; }
   .pause-icon { width: 44px; margin-bottom: 4px; font-size: 1.25rem; }
   .pause-card .primary-button,
@@ -690,6 +729,9 @@ kbd {
   .hat-hud-label { font-size: 0; }
   .hat-hud-label b { font-size: .68rem; }
   .hat-slots { grid-template-columns: repeat(6, 15px); }
+  .food-hud-label span:first-child { display: none; }
+  .food-hud-label { min-width: 45px; }
+  .food-slots { grid-template-columns: repeat(6, 14px); }
   .victory-card { padding: 15px; }
   .victory-results { grid-template-columns: 1fr 100px 1fr; gap: 5px; }
   .victory-score { width: 95px; min-height: 82px; border-radius: 15px; }
@@ -698,6 +740,10 @@ kbd {
   .victory-results canvas { width: 110px; }
   .victory-hat-colors { margin-bottom: 8px; }
   .victory-hat-colors span { width: 18px; }
+  .victory-food-summary { gap: 5px; padding: 5px 7px; }
+  .victory-food-icons { gap: 1px; font-size: .92rem; }
+  .victory-food-score b { font-size: .9rem; }
+  .victory-food-score small { font-size: .5rem; }
 }
 
 @media (max-height: 650px) and (min-width: 761px) {
