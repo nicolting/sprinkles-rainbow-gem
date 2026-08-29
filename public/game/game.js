@@ -609,7 +609,8 @@
         warned: false
       })),
       key: null,
-      door: { x: 6300, y: 392, w: 50, h: 218, open: false, stageExit: true },
+      // The portal must come after every collectible; otherwise players stop at 18 / 20.
+      door: { x: 6900, y: 392, w: 50, h: 218, open: false, stageExit: true },
       gem: { x: WORLD.gemX, y: 474, w: 74, h: 105 }
     };
   }
@@ -937,7 +938,9 @@
     showMessage(
       state.stage === 4
         ? "Level 4 updated: the first lava platform is now a short hop!"
-        : `Welcome back to Stage ${state.stage}! Your progress is safe.`,
+        : state.stage === 5
+          ? "Level 5 fixed: all 20 crystals are now before the time portal!"
+          : `Welcome back to Stage ${state.stage}! Your progress is safe.`,
       3000
     );
     sounds.ensureContext();
@@ -1167,7 +1170,7 @@
     prepareStage(5, true);
     state.mode = "playing";
     setScreen("game");
-    showMessage("Level 5: 60-second countdown! Reach the portal before time runs out!", 3400);
+    showMessage("Level 5 fixed: collect all 20 crystals before the time portal!", 3400);
     sounds.ensureContext();
     saveProgress();
   }
@@ -2998,6 +3001,7 @@
       state.mode = "playing";
       setScreen("game");
       if (lvl === 4) showMessage("Level 4 updated: the first lava platform is now a short hop!", 3000);
+      if (lvl === 5) showMessage("Level 5 fixed: all 20 crystals are now before the time portal!", 3000);
       sounds.ensureContext();
       saveProgress();
     });
