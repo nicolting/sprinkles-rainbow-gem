@@ -1,10 +1,10 @@
 const CACHE_PREFIX = "sprinkles-rainbow-gem-v";
-const CACHE_NAME = `${CACHE_PREFIX}7`;
+const CACHE_NAME = `${CACHE_PREFIX}8`;
 const CORE_ASSETS = [
   "/",
   "/game/index.html",
-  "/game/style.css",
-  "/game/game.js",
+  "/game/style.css?v=8",
+  "/game/game.js?v=8",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
@@ -31,15 +31,12 @@ self.addEventListener("fetch", (event) => {
   if (requestUrl.origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request).then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        }
-        return response;
-      }).catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request).then((response) => {
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+      }
+      return response;
+    }).catch(() => caches.match(event.request))
   );
 });

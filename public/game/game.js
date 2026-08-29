@@ -512,7 +512,7 @@
     const platforms = [
       { x: 0, y: WORLD.floorY, w: 1250, h: 120, kind: "ground" },
       // Keep a short, comfortable run-up gap before the first lava platform.
-      { x: 1320, y: WORLD.floorY, w: 1700, h: 120, kind: "ground" },
+      { x: 1320, y: WORLD.floorY, w: 1740, h: 120, kind: "ground" },
       { x: 3120 - bonus / 2, y: 535, w: 260 + bonus, h: 32, kind: "lava" },
       { x: 3430 - bonus / 2, y: 470, w: 260 + bonus, h: 32, kind: "lava", moving: true, baseY: 470, lastY: 470 },
       { x: 3740 - bonus / 2, y: 535, w: 260 + bonus, h: 32, kind: "lava" },
@@ -934,7 +934,12 @@
     updateSoundButtons();
     updateMotionButton();
     updateHud();
-    showMessage(`Welcome back to Stage ${state.stage}! Your progress is safe.`, 2800);
+    showMessage(
+      state.stage === 4
+        ? "Level 4 updated: the first lava platform is now a short hop!"
+        : `Welcome back to Stage ${state.stage}! Your progress is safe.`,
+      3000
+    );
     sounds.ensureContext();
   }
 
@@ -2992,6 +2997,7 @@
       prepareStage(lvl, true);
       state.mode = "playing";
       setScreen("game");
+      if (lvl === 4) showMessage("Level 4 updated: the first lava platform is now a short hop!", 3000);
       sounds.ensureContext();
       saveProgress();
     });
