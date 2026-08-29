@@ -511,7 +511,8 @@
     const bonus = config.platformBonus;
     const platforms = [
       { x: 0, y: WORLD.floorY, w: 1250, h: 120, kind: "ground" },
-      { x: 1320, y: WORLD.floorY, w: 1400, h: 120, kind: "ground" },
+      // Keep a short, comfortable run-up gap before the first lava platform.
+      { x: 1320, y: WORLD.floorY, w: 1700, h: 120, kind: "ground" },
       { x: 3120 - bonus / 2, y: 535, w: 260 + bonus, h: 32, kind: "lava" },
       { x: 3430 - bonus / 2, y: 470, w: 260 + bonus, h: 32, kind: "lava", moving: true, baseY: 470, lastY: 470 },
       { x: 3740 - bonus / 2, y: 535, w: 260 + bonus, h: 32, kind: "lava" },
