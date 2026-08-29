@@ -741,7 +741,13 @@
       const foodIds = new Set(GROWTH_FOODS.map((item) => item.id));
       const foods = uniqueAllowed(raw.foods, foodIds).slice(0, GROWTH_FOODS.length);
       const hats = uniqueAllowed(raw.hats, hatIds).slice(0, MAGIC_HAT_TYPES.length);
-      const stage = clamp(Number.isInteger(raw.currentStage) ? raw.currentStage : 1, 1, 6);
+      const savedStage = clamp(Number.isInteger(raw.currentStage) ? raw.currentStage : 1, 1, 6);
+      const inferredMaxUnlockedStage = Number.isInteger(raw.maxUnlockedStage)
+        ? raw.maxUnlockedStage
+        : Math.max(savedStage, raw.stage3Completed ? 4 : raw.stage3Unlocked ? 3 : raw.stage2Unlocked ? 2 : 1);
+      // Older three-level saves marked Level 3 complete but still pointed at Level 3.
+      // Send those players directly to their newly unlocked Level 4.
+      const stage = savedStage === 3 && raw.stage3Completed && inferredMaxUnlockedStage === 4 ? 4 : savedStage;
       const starIndices = Array.isArray(raw.stage1CollectedIndices)
         ? [...new Set(raw.stage1CollectedIndices.filter((value) => Number.isInteger(value) && value >= 0 && value < 20))]
         : [];
@@ -755,7 +761,7 @@
         x: Number.isFinite(rawStage3Checkpoint.x) ? rawStage3Checkpoint.x : (stage === 3 && Number.isFinite(raw.checkpointX) ? raw.checkpointX : 150),
         name: typeof rawStage3Checkpoint.name === "string" ? rawStage3Checkpoint.name.slice(0, 80) : (stage === 3 && typeof raw.checkpointName === "string" ? raw.checkpointName.slice(0, 80) : "Bakery start")
       };
-      const maxUnlockedStage = clamp(Number.isInteger(raw.maxUnlockedStage) ? raw.maxUnlockedStage : Math.max(stage, raw.stage3Completed ? 4 : raw.stage3Unlocked ? 3 : raw.stage2Unlocked ? 2 : 1), 1, 6);
+      const maxUnlockedStage = clamp(Math.max(stage, inferredMaxUnlockedStage), 1, 6);
       return {
         version: Number.isInteger(raw.version) ? raw.version : 1,
         currentStage: stage,
@@ -861,7 +867,7 @@
       state.maxUnlockedStage = Math.max(state.maxUnlockedStage, saved.maxUnlockedStage || 1);
       const label = saved.maxUnlockedStage >= 6 && saved.currentStage === 6
         ? "Revisit the Crystal Sanctuary"
-        : `Continue Level ${saved.currentStage}`;
+        : `Continue to Level ${saved.currentStage}`;
       ui.continueSaved.textContent = label;
     }
     updateLevelSelectUI();
