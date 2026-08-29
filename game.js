@@ -628,6 +628,8 @@
       { x: 4190 - bonus / 2, y: 535, w: 280 + bonus, h: 32, kind: "rainbow" },
       { x: 4530 - bonus / 2, y: 475, w: 290 + bonus, h: 32, kind: "cake", moving: true, baseY: 475, lastY: 475 },
       { x: 4880 - bonus / 2, y: 535, w: 280 + bonus, h: 32, kind: "rainbow" },
+      // Extra stepping platform makes the final Chaos Lava Chasm jump reachable.
+      { x: 5220, y: 550, w: 220 + bonus / 2, h: 32, kind: "crystal" },
       { x: 5500, y: WORLD.floorY, w: 1700, h: 120, kind: "bakery-ground" },
       { x: 7200, y: WORLD.floorY, w: 1300, h: 120, kind: "crystal-ground" },
       { x: 7400, y: 510, w: 260 + bonus / 2, h: 28, kind: "crystal" },
@@ -940,7 +942,9 @@
         ? "Level 4 updated: the first lava platform is now a short hop!"
         : state.stage === 5
           ? "Level 5 fixed: all 20 crystals are now before the time portal!"
-          : `Welcome back to Stage ${state.stage}! Your progress is safe.`,
+          : state.stage === 6
+            ? "Level 6 updated: an extra platform now bridges the Chaos Lava Chasm!"
+            : `Welcome back to Stage ${state.stage}! Your progress is safe.`,
       3000
     );
     sounds.ensureContext();
@@ -1179,7 +1183,7 @@
     prepareStage(6, true);
     state.mode = "playing";
     setScreen("game");
-    showMessage("Level 6: Ultimate Sanctuary! Collect 30 gems and navigate composite hazards!", 3400);
+    showMessage("Level 6 updated: use the extra platform to cross the Chaos Lava Chasm!", 3400);
     sounds.ensureContext();
     saveProgress();
   }
@@ -3002,6 +3006,7 @@
       setScreen("game");
       if (lvl === 4) showMessage("Level 4 updated: the first lava platform is now a short hop!", 3000);
       if (lvl === 5) showMessage("Level 5 fixed: all 20 crystals are now before the time portal!", 3000);
+      if (lvl === 6) showMessage("Level 6 updated: an extra platform now bridges the Chaos Lava Chasm!", 3000);
       sounds.ensureContext();
       saveProgress();
     });

@@ -1,10 +1,10 @@
 const CACHE_PREFIX = "sprinkles-rainbow-gem-v";
-const CACHE_NAME = `${CACHE_PREFIX}9`;
+const CACHE_NAME = `${CACHE_PREFIX}10`;
 const CORE_ASSETS = [
   "/",
   "/game/index.html",
-  "/game/style.css?v=9",
-  "/game/game.js?v=9",
+  "/game/style.css?v=10",
+  "/game/game.js?v=10",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
