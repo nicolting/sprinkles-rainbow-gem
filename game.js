@@ -16,6 +16,9 @@
     story: document.getElementById("storyScreen"),
     transition: document.getElementById("stageTransitionScreen"),
     bakeryTransition: document.getElementById("bakeryTransitionScreen"),
+    stage4Transition: document.getElementById("stage4TransitionScreen"),
+    stage5Transition: document.getElementById("stage5TransitionScreen"),
+    stage6Transition: document.getElementById("stage6TransitionScreen"),
     pause: document.getElementById("pauseScreen"),
     victory: document.getElementById("victoryScreen"),
     error: document.getElementById("errorScreen"),
@@ -27,6 +30,8 @@
     stars: document.getElementById("starCount"),
     starTotal: document.getElementById("starTotal"),
     starHud: document.getElementById("starHud"),
+    timeHud: document.getElementById("timeHud"),
+    timerCount: document.getElementById("timerCount"),
     hatHud: document.getElementById("hatHud"),
     hatCount: document.getElementById("hatCount"),
     hatSlots: document.getElementById("hatSlots"),
@@ -50,6 +55,9 @@
     victoryCatCanvas: document.getElementById("victoryCatCanvas"),
     transitionStars: document.getElementById("transitionStars"),
     transitionHats: document.getElementById("transitionHats"),
+    enterStage4: document.getElementById("enterStage4Button"),
+    enterStage5: document.getElementById("enterStage5Button"),
+    enterStage6: document.getElementById("enterStage6Button"),
     continueSaved: document.getElementById("continueSavedButton"),
     titleSound: document.getElementById("titleSoundButton"),
     sound: document.getElementById("soundButton"),
@@ -95,7 +103,10 @@
   const STAGE_WORLDS = {
     1: { width: 6900, floorY: 610, lavaStart: 2760, lavaEnd: 4060, gemX: 6650 },
     2: { width: 7200, floorY: 610, lavaStart: 3900, lavaEnd: 5230, gemX: 6820 },
-    3: { width: 7600, floorY: 610, lavaStart: 3400, lavaEnd: 5020, gemX: 7360 }
+    3: { width: 7600, floorY: 610, lavaStart: 3400, lavaEnd: 5020, gemX: 7360 },
+    4: { width: 7800, floorY: 610, lavaStart: 3100, lavaEnd: 4600, gemX: 7550 },
+    5: { width: 7400, floorY: 610, lavaStart: 3200, lavaEnd: 4700, gemX: 7150 },
+    6: { width: 8500, floorY: 610, lavaStart: 3500, lavaEnd: 5500, gemX: 8250 }
   };
   let WORLD = { ...STAGE_WORLDS[1] };
 
@@ -160,6 +171,27 @@
       { x: 3400, name: "Moving Dessert Crossing" },
       { x: 5020, name: "Grow-and-Open Gate" },
       { x: 6250, name: "Rainbow Cake Finale" }
+    ],
+    4: [
+      { x: 0, name: "Moonlight Entrance" },
+      { x: 1250, name: "Starlight Trail" },
+      { x: 3050, name: "Floating Flower Crossing" },
+      { x: 4600, name: "Crystal Petal Meadow" },
+      { x: 6100, name: "Moonstone Gate" }
+    ],
+    5: [
+      { x: 0, name: "Time Challenge Entrance" },
+      { x: 1100, name: "Chrono Crystal Steps" },
+      { x: 3150, name: "Rapid Lava Rush" },
+      { x: 4700, name: "Tick-Tock Trail" },
+      { x: 6000, name: "Time Portal Finale" }
+    ],
+    6: [
+      { x: 0, name: "Sanctuary Gates" },
+      { x: 1200, name: "Prism Plateau" },
+      { x: 3450, name: "Chaos Lava Chasm" },
+      { x: 5500, name: "Crystal Labyrinth" },
+      { x: 7200, name: "Rainbow Gem Shrine" }
     ]
   };
   let SECTION_NAMES = STAGE_SECTIONS[1];
@@ -195,7 +227,7 @@
   ];
   const BAKERY_GATE_GROWTH = 5;
   const SAVE_KEY = "sprinkles-rainbow-gem-save";
-  const SAVE_VERSION = 3;
+  const SAVE_VERSION = 4;
 
   const BACKGROUND_CRYSTALS = [
     { x: 180, y: 225, size: 52, color: "#7366dd" },
@@ -475,9 +507,176 @@
     };
   }
 
+  function buildStage4(config) {
+    const bonus = config.platformBonus;
+    const platforms = [
+      { x: 0, y: WORLD.floorY, w: 1250, h: 120, kind: "ground" },
+      { x: 1320, y: WORLD.floorY, w: 1400, h: 120, kind: "ground" },
+      { x: 3120 - bonus / 2, y: 535, w: 260 + bonus, h: 32, kind: "lava" },
+      { x: 3430 - bonus / 2, y: 470, w: 260 + bonus, h: 32, kind: "lava", moving: true, baseY: 470, lastY: 470 },
+      { x: 3740 - bonus / 2, y: 535, w: 260 + bonus, h: 32, kind: "lava" },
+      { x: 4050 - bonus / 2, y: 470, w: 260 + bonus, h: 32, kind: "lava", moving: true, baseY: 470, lastY: 470 },
+      { x: 4360 - bonus / 2, y: 535, w: 260 + bonus, h: 32, kind: "lava" },
+      { x: 4600, y: WORLD.floorY, w: 1500, h: 120, kind: "ground" },
+      { x: 6100, y: WORLD.floorY, w: 1700, h: 120, kind: "ground" },
+      { x: 6300, y: 490, w: 240 + bonus / 2, h: 28, kind: "crystal" },
+      { x: 6680, y: 530, w: 220 + bonus / 2, h: 28, kind: "crystal" }
+    ];
+
+    // 25 star gems (+25% over Level 1's 20)
+    const starPositions = [
+      [380, 520], [680, 480], [980, 525], [1380, 510], [1620, 460],
+      [1880, 520], [2150, 475], [2420, 515], [2700, 470], [2980, 510],
+      [3200, 460], [3510, 395], [3820, 460], [4130, 395], [4440, 460],
+      [4720, 520], [5000, 475], [5280, 515], [5560, 465], [5840, 510],
+      [6120, 515], [6380, 420], [6760, 460], [7040, 500], [7300, 470]
+    ];
+
+    const checkpointDefinitions = [
+      { x: 1100, extra: true },
+      { x: 2650, extra: false },
+      { x: 4650, extra: true },
+      { x: 6050, extra: false },
+      { x: 6900, extra: true }
+    ];
+
+    return {
+      stage: 4,
+      platforms,
+      stars: starPositions.map(([x, y], index) => ({ x, y, r: 18, collected: false, phase: index * 0.65 })),
+      checkpoints: checkpointDefinitions
+        .filter((checkpoint) => config.extraCheckpoints || !checkpoint.extra)
+        .map((checkpoint) => ({ ...checkpoint, y: WORLD.floorY - 72, active: false })),
+      rocks: [1450, 1850, 2250, 2600, 4850, 5450].map((x, index) => ({
+        x,
+        y: -85,
+        size: index % 2 === 0 ? 60 : 54,
+        state: "idle",
+        timer: index * 180,
+        shadow: 0,
+        warned: false
+      })),
+      key: { x: 5600, y: 520, w: 30, h: 42, collected: false },
+      door: { x: 6000, y: 392, w: 46, h: 218, open: false },
+      gem: { x: WORLD.gemX, y: 474, w: 74, h: 105 }
+    };
+  }
+
+  function buildStage5(config) {
+    const bonus = config.platformBonus;
+    const platforms = [
+      { x: 0, y: WORLD.floorY, w: 1100, h: 120, kind: "crystal-ground" },
+      { x: 1170, y: WORLD.floorY, w: 1200, h: 120, kind: "crystal-ground" },
+      { x: 2420, y: WORLD.floorY, w: 780, h: 120, kind: "crystal-ground" },
+      { x: 3220 - bonus / 2, y: 525, w: 270 + bonus, h: 32, kind: "rainbow" },
+      { x: 3550 - bonus / 2, y: 465, w: 280 + bonus, h: 32, kind: "rainbow", moving: true, baseY: 465, lastY: 465 },
+      { x: 3890 - bonus / 2, y: 525, w: 270 + bonus, h: 32, kind: "rainbow" },
+      { x: 4220 - bonus / 2, y: 465, w: 280 + bonus, h: 32, kind: "rainbow", moving: true, baseY: 465, lastY: 465 },
+      { x: 4560 - bonus / 2, y: 525, w: 270 + bonus, h: 32, kind: "rainbow" },
+      { x: 4700, y: WORLD.floorY, w: 2700, h: 120, kind: "crystal-ground" }
+    ];
+
+    // 20 time crystals
+    const starPositions = [
+      [350, 520], [650, 480], [950, 525], [1300, 510], [1600, 460],
+      [1900, 520], [2200, 475], [2550, 515], [2850, 470], [3300, 455],
+      [3630, 395], [3970, 455], [4300, 395], [4640, 455], [4900, 520],
+      [5250, 475], [5600, 515], [6000, 465], [6400, 510], [6800, 470]
+    ];
+
+    const checkpointDefinitions = [
+      { x: 1000, extra: true },
+      { x: 2350, extra: false },
+      { x: 4800, extra: false },
+      { x: 5900, extra: true }
+    ];
+
+    return {
+      stage: 5,
+      platforms,
+      stars: starPositions.map(([x, y], index) => ({ x, y, r: 18, collected: false, phase: index * 0.7 })),
+      checkpoints: checkpointDefinitions
+        .filter((checkpoint) => config.extraCheckpoints || !checkpoint.extra)
+        .map((checkpoint) => ({ ...checkpoint, y: WORLD.floorY - 72, active: false })),
+      rocks: [1400, 1800, 5100, 5700].map((x, index) => ({
+        x,
+        y: -85,
+        size: index % 2 === 0 ? 58 : 50,
+        state: "idle",
+        timer: index * 200,
+        shadow: 0,
+        warned: false
+      })),
+      key: null,
+      door: { x: 6300, y: 392, w: 50, h: 218, open: false, stageExit: true },
+      gem: { x: WORLD.gemX, y: 474, w: 74, h: 105 }
+    };
+  }
+
+  function buildStage6(config) {
+    const bonus = config.platformBonus;
+    const platforms = [
+      { x: 0, y: WORLD.floorY, w: 1200, h: 120, kind: "bakery-ground" },
+      { x: 1260, y: WORLD.floorY, w: 1050, h: 120, kind: "bakery-ground" },
+      { x: 1400, y: 520, w: 280 + bonus / 2, h: 28, kind: "cookie" },
+      { x: 1800, y: 460, w: 260 + bonus / 2, h: 28, kind: "frosting" },
+      { x: 2370, y: WORLD.floorY, w: 1080, h: 120, kind: "crystal-ground" },
+      { x: 3500 - bonus / 2, y: 535, w: 280 + bonus, h: 32, kind: "rainbow" },
+      { x: 3840 - bonus / 2, y: 475, w: 290 + bonus, h: 32, kind: "rainbow", moving: true, baseY: 475, lastY: 475 },
+      { x: 4190 - bonus / 2, y: 535, w: 280 + bonus, h: 32, kind: "rainbow" },
+      { x: 4530 - bonus / 2, y: 475, w: 290 + bonus, h: 32, kind: "cake", moving: true, baseY: 475, lastY: 475 },
+      { x: 4880 - bonus / 2, y: 535, w: 280 + bonus, h: 32, kind: "rainbow" },
+      { x: 5500, y: WORLD.floorY, w: 1700, h: 120, kind: "bakery-ground" },
+      { x: 7200, y: WORLD.floorY, w: 1300, h: 120, kind: "crystal-ground" },
+      { x: 7400, y: 510, w: 260 + bonus / 2, h: 28, kind: "crystal" },
+      { x: 7750, y: 460, w: 260 + bonus / 2, h: 28, kind: "rainbow" }
+    ];
+
+    // 30 composite target gems
+    const starPositions = [
+      [360, 520], [640, 475], [920, 520], [1460, 455], [1860, 395],
+      [2200, 520], [2500, 470], [2800, 515], [3100, 475], [3300, 520],
+      [3580, 465], [3920, 405], [4270, 465], [4610, 405], [4960, 465],
+      [5250, 520], [5600, 475], [5900, 515], [6200, 470], [6500, 520],
+      [6800, 475], [7100, 515], [7350, 455], [7500, 445], [7850, 395],
+      [8000, 510], [8080, 460], [8150, 510], [8200, 460], [8240, 410]
+    ];
+
+    const checkpointDefinitions = [
+      { x: 1100, extra: true },
+      { x: 2300, extra: false },
+      { x: 3350, extra: true },
+      { x: 5550, extra: false },
+      { x: 7150, extra: true }
+    ];
+
+    return {
+      stage: 6,
+      platforms,
+      stars: starPositions.map(([x, y], index) => ({ x, y, r: 18, collected: false, phase: index * 0.6 })),
+      checkpoints: checkpointDefinitions
+        .filter((checkpoint) => config.extraCheckpoints || !checkpoint.extra)
+        .map((checkpoint) => ({ ...checkpoint, y: WORLD.floorY - 72, active: false })),
+      rocks: [
+        { x: 1350, y: -85, size: 58, pastryStyle: "cookie", state: "idle", timer: 0, shadow: 0, warned: false },
+        { x: 1750, y: -85, size: 54, state: "idle", timer: 200, shadow: 0, warned: false },
+        { x: 2600, y: -85, size: 60, pastryStyle: "bread", state: "idle", timer: 400, shadow: 0, warned: false },
+        { x: 3000, y: -85, size: 52, state: "idle", timer: 600, shadow: 0, warned: false },
+        { x: 5750, y: -85, size: 56, pastryStyle: "cookie", state: "idle", timer: 800, shadow: 0, warned: false },
+        { x: 6400, y: -85, size: 58, state: "idle", timer: 1000, shadow: 0, warned: false }
+      ],
+      key: { x: 6700, y: 520, w: 30, h: 42, collected: false },
+      door: { x: 7050, y: 392, w: 50, h: 218, open: false, stageExit: true },
+      gem: { x: WORLD.gemX, y: 474, w: 74, h: 105 }
+    };
+  }
+
   function buildStage(stageNumber, config) {
     if (stageNumber === 2) return buildStage2(config);
     if (stageNumber === 3) return buildStage3(config);
+    if (stageNumber === 4) return buildStage4(config);
+    if (stageNumber === 5) return buildStage5(config);
+    if (stageNumber === 6) return buildStage6(config);
     return buildLevel(config);
   }
 
@@ -504,12 +703,12 @@
     growthAnimation: 1,
     growthGlow: 0,
     stage2Unlocked: false,
-    stage3Unlocked: false,
-    stage3Completed: false,
+    maxUnlockedStage: 1,
     stage3Checkpoint: { x: 150, name: "Bakery start" },
     stage1CollectedIndices: [],
     checkpointX: 150,
     checkpointName: "Cave start",
+    timeLeft: 60,
     cameraX: 0,
     time: 0,
     lastTime: 0,
@@ -539,7 +738,7 @@
       const foodIds = new Set(GROWTH_FOODS.map((item) => item.id));
       const foods = uniqueAllowed(raw.foods, foodIds).slice(0, GROWTH_FOODS.length);
       const hats = uniqueAllowed(raw.hats, hatIds).slice(0, MAGIC_HAT_TYPES.length);
-      const stage = clamp(Number.isInteger(raw.currentStage) ? raw.currentStage : 1, 1, 3);
+      const stage = clamp(Number.isInteger(raw.currentStage) ? raw.currentStage : 1, 1, 6);
       const starIndices = Array.isArray(raw.stage1CollectedIndices)
         ? [...new Set(raw.stage1CollectedIndices.filter((value) => Number.isInteger(value) && value >= 0 && value < 20))]
         : [];
@@ -548,9 +747,11 @@
         x: Number.isFinite(rawStage3Checkpoint.x) ? rawStage3Checkpoint.x : (stage === 3 && Number.isFinite(raw.checkpointX) ? raw.checkpointX : 150),
         name: typeof rawStage3Checkpoint.name === "string" ? rawStage3Checkpoint.name.slice(0, 80) : (stage === 3 && typeof raw.checkpointName === "string" ? raw.checkpointName.slice(0, 80) : "Bakery start")
       };
+      const maxUnlockedStage = clamp(Number.isInteger(raw.maxUnlockedStage) ? raw.maxUnlockedStage : Math.max(stage, raw.stage3Completed ? 6 : raw.stage3Unlocked ? 3 : raw.stage2Unlocked ? 2 : 1), 1, 6);
       return {
         version: Number.isInteger(raw.version) ? raw.version : 1,
         currentStage: stage,
+        maxUnlockedStage,
         difficulty: Object.hasOwn(DIFFICULTIES, raw.difficulty) ? raw.difficulty : "easy",
         soundEnabled: raw.soundEnabled !== false,
         reducedMotion: Boolean(raw.reducedMotion),
@@ -559,12 +760,12 @@
         hats,
         foods,
         growthLevel: foods.length,
-        checkpointX: stage === 3 ? stage3Checkpoint.x : (Number.isFinite(raw.checkpointX) ? raw.checkpointX : 150),
-        checkpointName: stage === 3 ? stage3Checkpoint.name : (typeof raw.checkpointName === "string" ? raw.checkpointName.slice(0, 80) : ""),
+        checkpointX: Number.isFinite(raw.checkpointX) ? raw.checkpointX : 150,
+        checkpointName: typeof raw.checkpointName === "string" ? raw.checkpointName.slice(0, 80) : "",
         stage3Checkpoint,
-        stage2Unlocked: Boolean(raw.stage2Unlocked || stage >= 2 || hats.length),
-        stage3Unlocked: Boolean(raw.stage3Unlocked || stage >= 3 || foods.length),
-        stage3Completed: Boolean(raw.stage3Completed)
+        stage2Unlocked: Boolean(raw.stage2Unlocked || maxUnlockedStage >= 2),
+        stage3Unlocked: Boolean(raw.stage3Unlocked || maxUnlockedStage >= 3),
+        stage3Completed: Boolean(raw.stage3Completed || maxUnlockedStage >= 4)
       };
     } catch (error) {
       console.warn("Saved adventure could not be loaded; starting safely.", error);
@@ -585,6 +786,7 @@
       const data = {
         version: SAVE_VERSION,
         currentStage,
+        maxUnlockedStage: state.maxUnlockedStage,
         difficulty: state.difficulty,
         soundEnabled: sounds.enabled,
         reducedMotion: state.reducedMotion,
@@ -596,16 +798,41 @@
         checkpointX: advancing ? 150 : state.checkpointX,
         checkpointName: advancing ? "" : state.checkpointName,
         stage3Checkpoint: { ...state.stage3Checkpoint },
-        stage2Unlocked: state.stage2Unlocked,
-        stage3Unlocked: state.stage3Unlocked,
-        stage3Completed: state.stage3Completed
+        stage2Unlocked: state.maxUnlockedStage >= 2,
+        stage3Unlocked: state.maxUnlockedStage >= 3,
+        stage3Completed: state.maxUnlockedStage >= 4
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
       state.loadedSave = data;
       updateSavedAdventureButton();
+      updateLevelSelectUI();
     } catch (error) {
       console.warn("Progress could not be saved in this browser.", error);
     }
+  }
+
+  function updateLevelSelectUI() {
+    const saved = readSavedProgress();
+    const unlocked = saved ? saved.maxUnlockedStage : state.maxUnlockedStage;
+    const buttons = document.querySelectorAll(".level-select-btn");
+    buttons.forEach((btn) => {
+      const lvl = parseInt(btn.dataset.level, 10);
+      btn.disabled = lvl > unlocked;
+      btn.classList.toggle("is-active", lvl === state.stage);
+    });
+
+    const replayButtons = [
+      { id: "replayStage1Button", level: 1 },
+      { id: "replayStage2Button", level: 2 },
+      { id: "replayStage3Button", level: 3 },
+      { id: "replayStage4Button", level: 4 },
+      { id: "replayStage5Button", level: 5 },
+      { id: "replayStage6Button", level: 6 }
+    ];
+    replayButtons.forEach(({ id, level }) => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = level > unlocked;
+    });
   }
 
   function updateSavedAdventureButton() {
@@ -613,32 +840,34 @@
     const saved = readSavedProgress();
     ui.continueSaved.hidden = !saved;
     if (saved) {
-      const label = saved.stage3Completed && saved.foods.length === GROWTH_FOODS.length
-        ? "Revisit the Magic Bakery"
+      state.maxUnlockedStage = Math.max(state.maxUnlockedStage, saved.maxUnlockedStage || 1);
+      const label = saved.maxUnlockedStage >= 6
+        ? "Revisit the Crystal Sanctuary"
         : `Continue Stage ${saved.currentStage}`;
       ui.continueSaved.textContent = label;
     }
+    updateLevelSelectUI();
   }
 
   function restoreLevelProgress(saved) {
     if (state.stage === 1) {
       const collected = new Set(saved.stage1CollectedIndices);
-      state.level.stars.forEach((star, index) => { star.collected = collected.has(index); });
+      if (state.level.stars) state.level.stars.forEach((star, index) => { star.collected = collected.has(index); });
       state.collected = collected.size;
     } else if (state.stage === 2) {
-      state.level.magicBalls.forEach((ball) => { ball.collected = saved.hats.includes(ball.id); });
-      state.level.door.open = saved.hats.length === MAGIC_HAT_TYPES.length;
-    } else {
-      state.level.foods.forEach((food) => { food.collected = saved.foods.includes(food.id); });
+      if (state.level.magicBalls) state.level.magicBalls.forEach((ball) => { ball.collected = saved.hats.includes(ball.id); });
+      if (state.level.door) state.level.door.open = saved.hats.length === MAGIC_HAT_TYPES.length;
+    } else if (state.stage === 3) {
+      if (state.level.foods) state.level.foods.forEach((food) => { food.collected = saved.foods.includes(food.id); });
       state.growthLevel = saved.foods.length;
       state.growthFromScale = GROWTH_LEVELS[state.growthLevel].visualScale;
       state.growthAnimation = 1;
-      state.level.door.open = state.growthLevel >= BAKERY_GATE_GROWTH;
-      state.level.exitDoor.open = state.growthLevel >= GROWTH_FOODS.length;
+      if (state.level.door) state.level.door.open = state.growthLevel >= BAKERY_GATE_GROWTH;
+      if (state.level.exitDoor) state.level.exitDoor.open = state.growthLevel >= GROWTH_FOODS.length;
     }
     state.checkpointX = clamp(saved.checkpointX || 150, 150, WORLD.width - 240);
-    state.checkpointName = saved.checkpointName || (state.stage === 1 ? "Cave start" : state.stage === 2 ? "Crystal Cave start" : "Bakery start");
-    state.level.checkpoints.forEach((checkpoint) => { checkpoint.active = checkpoint.x < state.checkpointX; });
+    state.checkpointName = saved.checkpointName || `Stage ${state.stage} start`;
+    if (state.level.checkpoints) state.level.checkpoints.forEach((checkpoint) => { checkpoint.active = checkpoint.x < state.checkpointX; });
     state.player.x = state.checkpointX;
     state.player.y = WORLD.floorY - state.player.h - 4;
     state.cameraX = clamp(state.player.x - 300, 0, WORLD.width - VIEW.width);
@@ -658,6 +887,7 @@
     state.hats = [...saved.hats];
     state.foods = [...saved.foods];
     state.growthLevel = saved.foods.length;
+    state.maxUnlockedStage = saved.maxUnlockedStage || 1;
     state.stage2Unlocked = saved.stage2Unlocked;
     state.stage3Unlocked = saved.stage3Unlocked;
     state.stage3Completed = saved.stage3Completed;
@@ -682,6 +912,9 @@
       story: ui.story,
       transition: ui.transition,
       bakeryTransition: ui.bakeryTransition,
+      stage4Transition: ui.stage4Transition,
+      stage5Transition: ui.stage5Transition,
+      stage6Transition: ui.stage6Transition,
       pause: ui.pause,
       victory: ui.victory,
       error: ui.error
@@ -754,9 +987,17 @@
 
     const inStage2 = state.stage === 2;
     const inStage3 = state.stage === 3;
-    ui.starHud.hidden = state.stage !== 1;
+    const inStarStage = [1, 4, 5, 6].includes(state.stage);
+
+    ui.starHud.hidden = !inStarStage;
     ui.hatHud.hidden = !inStage2;
     ui.foodHud.hidden = !inStage3;
+    ui.timeHud.hidden = state.stage !== 5;
+
+    if (state.stage === 5) {
+      ui.timerCount.textContent = Math.ceil(state.timeLeft);
+      ui.timeHud.classList.toggle("timer-warning", state.timeLeft <= 15);
+    }
 
     if (inStage2) {
       ui.hatCount.textContent = `${state.hats.length} / ${MAGIC_HAT_TYPES.length}`;
@@ -768,10 +1009,10 @@
         slot.classList.toggle("is-collected", collected);
         slot.style.setProperty("--hat-color", type?.color || "#ffffff");
       });
-    } else if (state.stage === 1) {
+    } else if (inStarStage) {
       ui.stars.textContent = String(state.collected);
-      ui.starTotal.textContent = `/ ${state.level.stars.length}`;
-    } else {
+      ui.starTotal.textContent = `/ ${state.level.stars?.length || 20}`;
+    } else if (inStage3) {
       ui.foodCount.textContent = `${state.foods.length} / ${GROWTH_FOODS.length}`;
       ui.growthCount.textContent = `${state.growthLevel} / ${GROWTH_FOODS.length}`;
       ui.growthFill.style.width = `${(state.growthLevel / GROWTH_FOODS.length) * 100}%`;
@@ -809,29 +1050,26 @@
     state.player = createPlayer();
     state.level = buildStage(stageNumber, state.config);
     state.hearts = state.config.hearts;
-    if (stageNumber === 1 && resetStageProgress) {
+    state.timeLeft = 60;
+
+    if (resetStageProgress) {
       state.collected = 0;
-      state.stage1Stars = 0;
-      state.stage1CollectedIndices = [];
-      state.hats = [];
-      state.foods = [];
-      state.growthLevel = 0;
-      state.stage2Unlocked = false;
-      state.stage3Unlocked = false;
-      state.stage3Completed = false;
-    }
-    if (stageNumber === 2 && resetStageProgress) {
-      state.hats = [];
-      state.foods = [];
-      state.growthLevel = 0;
-    }
-    if (stageNumber === 3 && resetStageProgress) {
-      state.foods = [];
-      state.growthLevel = 0;
-      state.stage3Checkpoint = { x: 150, name: "Bakery start" };
+      if (stageNumber === 1) {
+        state.stage1Stars = 0;
+        state.stage1CollectedIndices = [];
+        state.hats = [];
+        state.foods = [];
+        state.growthLevel = 0;
+      } else if (stageNumber === 2) {
+        state.hats = [];
+      } else if (stageNumber === 3) {
+        state.foods = [];
+        state.growthLevel = 0;
+        state.stage3Checkpoint = { x: 150, name: "Bakery start" };
+      }
     }
     state.checkpointX = 150;
-    state.checkpointName = stageNumber === 1 ? "Cave start" : stageNumber === 2 ? "Crystal Cave start" : "Bakery start";
+    state.checkpointName = `Stage ${stageNumber} start`;
     state.cameraX = 0;
     state.time = 0;
     state.messageTimer = 0;
@@ -850,6 +1088,7 @@
     input.right = false;
     input.jump = false;
     updateHud();
+    updateLevelSelectUI();
   }
 
   function startGame() {
@@ -864,6 +1103,33 @@
         : "Use ← → to move and ↑ or Space to jump!",
       3200
     );
+    sounds.ensureContext();
+    saveProgress();
+  }
+
+  function startStage4() {
+    prepareStage(4, true);
+    state.mode = "playing";
+    setScreen("game");
+    showMessage("Welcome to Level 4! Collect 25 star gems to complete the Moonlight Garden!", 3400);
+    sounds.ensureContext();
+    saveProgress();
+  }
+
+  function startStage5() {
+    prepareStage(5, true);
+    state.mode = "playing";
+    setScreen("game");
+    showMessage("Level 5: 60-second countdown! Reach the portal before time runs out!", 3400);
+    sounds.ensureContext();
+    saveProgress();
+  }
+
+  function startStage6() {
+    prepareStage(6, true);
+    state.mode = "playing";
+    setScreen("game");
+    showMessage("Level 6: Ultimate Sanctuary! Collect 30 gems and navigate composite hazards!", 3400);
     sounds.ensureContext();
     saveProgress();
   }
@@ -1148,27 +1414,29 @@
   function updateCollectibles() {
     const playerBox = { x: state.player.x + 4, y: state.player.y + 3, w: state.player.w - 8, h: state.player.h - 3 };
 
-    if (state.stage === 1) {
-      for (const star of state.level.stars) {
-        if (star.collected) continue;
-        const box = { x: star.x - 22, y: star.y - 22, w: 44, h: 44 };
-        if (overlap(playerBox, box)) {
-          star.collected = true;
-          state.collected += 1;
-          state.player.collectGlow = 1;
-          burst(star.x, star.y, ["#ffd95e", "#ffffff", "#ff9ec6"], 12, 4);
-          sounds.collect();
-          showMessage(state.collected % 5 === 0 ? `${state.collected} stars! Wonderful exploring!` : "Sparkling star collected!", 1200);
+    if ([1, 4, 5, 6].includes(state.stage)) {
+      if (state.level.stars) {
+        for (const star of state.level.stars) {
+          if (star.collected) continue;
+          const box = { x: star.x - 22, y: star.y - 22, w: 44, h: 44 };
+          if (overlap(playerBox, box)) {
+            star.collected = true;
+            state.collected += 1;
+            state.player.collectGlow = 1;
+            burst(star.x, star.y, ["#ffd95e", "#ffffff", "#ff9ec6"], 12, 4);
+            sounds.collect();
+            showMessage(state.collected % 5 === 0 ? `${state.collected} items! Wonderful exploring!` : "Sparkling gem collected!", 1200);
+          }
         }
       }
 
       const key = state.level.key;
       if (key && !key.collected && overlap(playerBox, key)) {
         key.collected = true;
-        state.level.door.open = true;
+        if (state.level.door) state.level.door.open = true;
         burst(key.x, key.y, ["#7ce8d0", "#ffffff", "#9f83ff", "#ffda62"], 20, 5);
         sounds.checkpoint();
-        showMessage("Crystal key found! The door is opening!", 2300);
+        showMessage("Key found! The door is opening!", 2300);
       }
     } else if (state.stage === 2) {
       for (const ball of state.level.magicBalls) {
@@ -1176,7 +1444,7 @@
         const box = { x: ball.x - 25, y: ball.y - 25, w: 50, h: 50 };
         if (overlap(playerBox, box)) collectMagicBall(ball);
       }
-    } else {
+    } else if (state.stage === 3) {
       for (const food of state.level.foods) {
         if (food.collected) continue;
         const box = { x: food.x - 27, y: food.y - 27, w: 54, h: 54 };
@@ -1205,7 +1473,10 @@
     if (overlap(playerBox, state.level.gem)) {
       if (state.stage === 1) completeStage1();
       else if (state.stage === 2 && state.hats.length === MAGIC_HAT_TYPES.length) completeStage2();
-      else if (state.stage === 3 && state.foods.length === GROWTH_FOODS.length) winGame();
+      else if (state.stage === 3 && state.foods.length === GROWTH_FOODS.length) completeStage3();
+      else if (state.stage === 4 && state.collected >= 25) completeStage4();
+      else if (state.stage === 5 && state.collected >= 20) completeStage5();
+      else if (state.stage === 6 && state.collected >= 30) winGame();
     }
   }
 
@@ -1323,6 +1594,7 @@
   function completeStage1() {
     if (state.mode !== "playing") return;
     state.stage1Stars = state.collected;
+    state.maxUnlockedStage = Math.max(state.maxUnlockedStage, 2);
     state.stage2Unlocked = true;
     state.mode = "transition";
     ui.transitionStars.textContent = `${state.stage1Stars} / ${state.level.stars.length}`;
@@ -1335,6 +1607,7 @@
 
   function completeStage2() {
     if (state.mode !== "playing") return;
+    state.maxUnlockedStage = Math.max(state.maxUnlockedStage, 3);
     state.stage3Unlocked = true;
     state.mode = "bakeryTransition";
     ui.transitionHats.textContent = `${state.hats.length} / ${MAGIC_HAT_TYPES.length}`;
@@ -1345,9 +1618,44 @@
     document.getElementById("enterStage3Button").focus();
   }
 
+  function completeStage3() {
+    if (state.mode !== "playing") return;
+    state.maxUnlockedStage = Math.max(state.maxUnlockedStage, 4);
+    state.stage3Completed = true;
+    state.mode = "stage4Transition";
+    sounds.checkpoint();
+    saveProgress(4);
+    setScreen("stage4Transition");
+    announce("Stage 3 complete. Moving forward to Level 4 Moonlight Garden!");
+    ui.enterStage4?.focus();
+  }
+
+  function completeStage4() {
+    if (state.mode !== "playing") return;
+    state.maxUnlockedStage = Math.max(state.maxUnlockedStage, 5);
+    state.mode = "stage5Transition";
+    sounds.checkpoint();
+    saveProgress(5);
+    setScreen("stage5Transition");
+    announce("Stage 4 complete. Level 5 60-Second Time Challenge awaits!");
+    ui.enterStage5?.focus();
+  }
+
+  function completeStage5() {
+    if (state.mode !== "playing") return;
+    state.maxUnlockedStage = Math.max(state.maxUnlockedStage, 6);
+    state.mode = "stage6Transition";
+    sounds.checkpoint();
+    saveProgress(6);
+    setScreen("stage6Transition");
+    announce("Stage 5 complete. Level 6 Ultimate Crystal Sanctuary unlocked!");
+    ui.enterStage6?.focus();
+  }
+
   function winGame() {
     if (state.mode !== "playing") return;
     state.mode = "victory";
+    state.maxUnlockedStage = 6;
     state.stage3Completed = true;
     state.player.collectGlow = 1;
     burst(state.level.gem.x + 35, state.level.gem.y + 40, ["#ff708e", "#ffd65b", "#6de1b7", "#67cfff", "#a47af1"], 60, 8);
@@ -1364,9 +1672,9 @@
       .map((food) => `<span role="img" aria-label="${food.name}" title="${food.name}">${food.icon}</span>`)
       .join("");
     drawVictorySprinkles();
-    saveProgress(3);
+    saveProgress(6);
     setScreen("victory");
-    announce("Sprinkles found every magical treat, grew six times, and continued the Rainbow Gem adventure!");
+    announce("Sprinkles completed all 6 levels and conquered the Rainbow Gem adventure!");
     document.getElementById("playAgainButton").focus();
   }
 
@@ -1411,6 +1719,15 @@
   function update(dt) {
     const step = clamp(dt / (1000 / 60), 0, 2.2);
     state.time += dt;
+
+    if (state.stage === 5 && state.mode === "playing") {
+      state.timeLeft -= dt / 1000;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 60;
+        safeReturn("Time's up! Sprinkles returned to safety.");
+      }
+    }
+
     updateMovingPlatforms();
     updatePlayer(step, dt);
     updateRocks(step, dt);
@@ -2585,16 +2902,34 @@
   document.getElementById("continueButton").addEventListener("click", startGame);
   document.getElementById("enterStage2Button").addEventListener("click", startStage2);
   document.getElementById("enterStage3Button").addEventListener("click", startStage3);
+  ui.enterStage4?.addEventListener("click", startStage4);
+  ui.enterStage5?.addEventListener("click", startStage5);
+  ui.enterStage6?.addEventListener("click", startStage6);
   ui.continueSaved.addEventListener("click", resumeSavedAdventure);
+
+  document.querySelectorAll(".level-select-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const lvl = parseInt(btn.dataset.level, 10);
+      prepareStage(lvl, true);
+      state.mode = "playing";
+      setScreen("game");
+      sounds.ensureContext();
+      saveProgress();
+    });
+  });
+
   document.getElementById("pauseButton").addEventListener("click", pauseGame);
   document.getElementById("resumeButton").addEventListener("click", resumeGame);
   document.getElementById("restartCheckpointButton").addEventListener("click", restartFromCheckpoint);
   document.getElementById("restartStageButton").addEventListener("click", restartCurrentStage);
   document.getElementById("pauseTitleButton").addEventListener("click", returnToTitle);
   document.getElementById("playAgainButton").addEventListener("click", startGame);
-  document.getElementById("replayStage1Button").addEventListener("click", startGame);
-  document.getElementById("replayStage2Button").addEventListener("click", startStage2);
-  document.getElementById("replayStage3Button").addEventListener("click", startStage3);
+  document.getElementById("replayStage1Button")?.addEventListener("click", startGame);
+  document.getElementById("replayStage2Button")?.addEventListener("click", startStage2);
+  document.getElementById("replayStage3Button")?.addEventListener("click", startStage3);
+  document.getElementById("replayStage4Button")?.addEventListener("click", startStage4);
+  document.getElementById("replayStage5Button")?.addEventListener("click", startStage5);
+  document.getElementById("replayStage6Button")?.addEventListener("click", startStage6);
   document.getElementById("victoryTitleButton").addEventListener("click", returnToTitle);
   document.getElementById("errorRestartButton").addEventListener("click", () => window.location.reload());
   ui.titleSound.addEventListener("click", toggleSound);

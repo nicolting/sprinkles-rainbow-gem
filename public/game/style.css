@@ -713,6 +713,94 @@ kbd {
   .restart-choices { margin: 6px 0; padding: 5px 8px; }
 }
 
+.level-select-container {
+  margin: 10px 0 12px;
+  text-align: center;
+}
+
+.level-select-title {
+  margin: 0 0 6px;
+  color: var(--gold-soft);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.level-select-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.level-select-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 38px;
+  padding: 0 10px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  background: rgba(30, 20, 60, 0.6);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.level-select-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  background: rgba(80, 50, 140, 0.85);
+}
+
+.level-select-btn.is-active {
+  border-color: var(--gold-soft);
+  background: linear-gradient(135deg, #7c4dff, #b388ff);
+  box-shadow: 0 0 12px rgba(179, 136, 255, 0.5);
+}
+
+.level-select-btn:disabled {
+  opacity: 0.45;
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(15, 10, 30, 0.4);
+  cursor: not-allowed;
+}
+
+.timer-hud {
+  background: linear-gradient(135deg, #ff5252, #ff793f);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 10px rgba(255, 82, 82, 0.4);
+}
+
+.timer-hud.timer-warning {
+  animation: timerPulse 0.6s infinite alternate;
+}
+
+@keyframes timerPulse {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.08); filter: brightness(1.25); }
+}
+
+.victory-level-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.victory-level-buttons .secondary-button {
+  min-width: 40px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
 @media (max-width: 560px) {
   .sparkle-row { display: none; }
   h1 { margin-bottom: .25rem; font-size: clamp(1.55rem, 8vw, 2.5rem); }

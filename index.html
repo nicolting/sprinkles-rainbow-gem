@@ -64,6 +64,19 @@
 
           <button class="primary-button" id="startButton">Start Adventure <span aria-hidden="true">→</span></button>
           <button class="secondary-button saved-adventure-button" id="continueSavedButton" hidden>Continue Saved Adventure</button>
+
+          <div class="level-select-container">
+            <p class="level-select-title">Select Level</p>
+            <div class="level-select-grid" id="levelSelectGrid">
+              <button class="level-select-btn" data-level="1">L1</button>
+              <button class="level-select-btn" data-level="2">L2</button>
+              <button class="level-select-btn" data-level="3">L3</button>
+              <button class="level-select-btn" data-level="4">L4</button>
+              <button class="level-select-btn" data-level="5">L5 ⏱</button>
+              <button class="level-select-btn" data-level="6">L6 👑</button>
+            </div>
+          </div>
+
           <div class="title-actions">
             <button class="secondary-button" id="howToButton" aria-expanded="false" aria-controls="howToPanel">How to Play</button>
             <button class="icon-button" id="titleSoundButton" aria-pressed="false" aria-label="Turn sound off">🔊 <span>Sound on</span></button>
@@ -121,9 +134,46 @@
         </div>
       </div>
 
+      <div class="screen transition-screen" id="stage4TransitionScreen" hidden>
+        <div class="transition-card panel">
+          <div class="transition-trail" aria-hidden="true">
+            <span>🌸</span><span>✦</span><span>🌙</span><span>✦</span><span>✧</span>
+          </div>
+          <p class="eyebrow">Stage 3 complete</p>
+          <h2>Into the Moonlight Garden!</h2>
+          <p>Sprinkles steps into a moonlit flora garden filled with higher challenges and extra star gems!</p>
+          <button class="primary-button" id="enterStage4Button">Enter Level 4 <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+
+      <div class="screen transition-screen" id="stage5TransitionScreen" hidden>
+        <div class="transition-card panel">
+          <div class="transition-trail" aria-hidden="true">
+            <span>⏱</span><span>✦</span><span>⚡</span><span>✦</span><span>✧</span>
+          </div>
+          <p class="eyebrow">Stage 4 complete</p>
+          <h2>60-Second Countdown Challenge!</h2>
+          <p>The cave is collapsing into a time rift! Reach the exit within 60 seconds!</p>
+          <button class="primary-button" id="enterStage5Button">Enter Level 5 <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+
+      <div class="screen transition-screen" id="stage6TransitionScreen" hidden>
+        <div class="transition-card panel">
+          <div class="transition-trail" aria-hidden="true">
+            <span>👑</span><span>✦</span><span>💎</span><span>✦</span><span>✧</span>
+          </div>
+          <p class="eyebrow">Stage 5 complete</p>
+          <h2>The Ultimate Crystal Sanctuary!</h2>
+          <p>The final trial combines high scores, pastry rocks, moving platforms, and locked gates!</p>
+          <button class="primary-button" id="enterStage6Button">Enter Level 6 <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+
       <section class="hud" id="hud" aria-label="Game status" hidden>
         <div class="hud-pill hearts" id="heartDisplay" aria-label="Hearts"></div>
         <div class="hud-pill counter" id="starHud" aria-label="Stars collected"><span aria-hidden="true">★</span> <b id="starCount">0</b><small id="starTotal">/ 20</small></div>
+        <div class="hud-pill timer-hud" id="timeHud" aria-label="Time left" hidden><span aria-hidden="true">⏱</span> <b id="timerCount">60</b>s</div>
         <div class="hat-hud" id="hatHud" aria-label="Magic hats collected" hidden>
           <div class="hat-hud-label">Magic Hats: <b id="hatCount">0 / 6</b><small id="savedStars">★ 0 stars saved</small></div>
           <div class="hat-slots" id="hatSlots" aria-hidden="true">
@@ -202,9 +252,14 @@
           </div>
           <div class="victory-actions">
             <button class="primary-button" id="playAgainButton">Play Again</button>
-            <button class="secondary-button" id="replayStage1Button">Replay Stage 1</button>
-            <button class="secondary-button" id="replayStage2Button">Replay Stage 2</button>
-            <button class="secondary-button" id="replayStage3Button">Replay Stage 3</button>
+            <div class="victory-level-buttons">
+              <button class="secondary-button" id="replayStage1Button">L1</button>
+              <button class="secondary-button" id="replayStage2Button">L2</button>
+              <button class="secondary-button" id="replayStage3Button">L3</button>
+              <button class="secondary-button" id="replayStage4Button">L4</button>
+              <button class="secondary-button" id="replayStage5Button">L5 ⏱</button>
+              <button class="secondary-button" id="replayStage6Button">L6 👑</button>
+            </div>
             <button class="text-button" id="victoryTitleButton">Return to Title</button>
           </div>
         </div>
