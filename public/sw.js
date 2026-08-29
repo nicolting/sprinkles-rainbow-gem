@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "sprinkles-rainbow-gem-v";
-const CACHE_NAME = `${CACHE_PREFIX}4`;
+const CACHE_NAME = `${CACHE_PREFIX}5`;
 const CORE_ASSETS = [
   "/",
   "/game/index.html",

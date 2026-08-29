@@ -706,6 +706,9 @@
     maxUnlockedStage: 1,
     stage3Checkpoint: { x: 150, name: "Bakery start" },
     stage1CollectedIndices: [],
+    bonusStage: 0,
+    bonusCollectedIndices: [],
+    bonusKeyCollected: false,
     checkpointX: 150,
     checkpointName: "Cave start",
     timeLeft: 60,
@@ -742,12 +745,17 @@
       const starIndices = Array.isArray(raw.stage1CollectedIndices)
         ? [...new Set(raw.stage1CollectedIndices.filter((value) => Number.isInteger(value) && value >= 0 && value < 20))]
         : [];
+      const bonusStage = [4, 5, 6].includes(raw.bonusStage) ? raw.bonusStage : 0;
+      const bonusStarTotal = { 4: 25, 5: 20, 6: 30 }[bonusStage] || 0;
+      const bonusCollectedIndices = Array.isArray(raw.bonusCollectedIndices)
+        ? [...new Set(raw.bonusCollectedIndices.filter((value) => Number.isInteger(value) && value >= 0 && value < bonusStarTotal))]
+        : [];
       const rawStage3Checkpoint = raw.stage3Checkpoint && typeof raw.stage3Checkpoint === "object" ? raw.stage3Checkpoint : {};
       const stage3Checkpoint = {
         x: Number.isFinite(rawStage3Checkpoint.x) ? rawStage3Checkpoint.x : (stage === 3 && Number.isFinite(raw.checkpointX) ? raw.checkpointX : 150),
         name: typeof rawStage3Checkpoint.name === "string" ? rawStage3Checkpoint.name.slice(0, 80) : (stage === 3 && typeof raw.checkpointName === "string" ? raw.checkpointName.slice(0, 80) : "Bakery start")
       };
-      const maxUnlockedStage = clamp(Number.isInteger(raw.maxUnlockedStage) ? raw.maxUnlockedStage : Math.max(stage, raw.stage3Completed ? 6 : raw.stage3Unlocked ? 3 : raw.stage2Unlocked ? 2 : 1), 1, 6);
+      const maxUnlockedStage = clamp(Number.isInteger(raw.maxUnlockedStage) ? raw.maxUnlockedStage : Math.max(stage, raw.stage3Completed ? 4 : raw.stage3Unlocked ? 3 : raw.stage2Unlocked ? 2 : 1), 1, 6);
       return {
         version: Number.isInteger(raw.version) ? raw.version : 1,
         currentStage: stage,
@@ -757,6 +765,9 @@
         reducedMotion: Boolean(raw.reducedMotion),
         stage1Stars: clamp(Number(raw.stage1Stars) || starIndices.length, 0, 20),
         stage1CollectedIndices: starIndices,
+        bonusStage,
+        bonusCollectedIndices,
+        bonusKeyCollected: Boolean(raw.bonusKeyCollected),
         hats,
         foods,
         growthLevel: foods.length,
@@ -781,6 +792,10 @@
           .filter((index) => index >= 0);
       }
       if (state.stage === 3) state.stage3Checkpoint = { x: state.checkpointX, name: state.checkpointName };
+      const bonusStage = [4, 5, 6].includes(state.stage) ? state.stage : 0;
+      const bonusCollectedIndices = bonusStage && state.level?.stars
+        ? state.level.stars.map((star, index) => star.collected ? index : -1).filter((index) => index >= 0)
+        : [];
       const currentStage = stageOverride || state.stage;
       const advancing = currentStage !== state.stage;
       const data = {
@@ -792,6 +807,9 @@
         reducedMotion: state.reducedMotion,
         stage1Stars: state.stage1Stars,
         stage1CollectedIndices: state.stage1CollectedIndices,
+        bonusStage,
+        bonusCollectedIndices,
+        bonusKeyCollected: Boolean(bonusStage && state.level?.key?.collected),
         hats: [...state.hats],
         foods: [...state.foods],
         growthLevel: clamp(state.foods.length, 0, GROWTH_FOODS.length),
@@ -841,9 +859,9 @@
     ui.continueSaved.hidden = !saved;
     if (saved) {
       state.maxUnlockedStage = Math.max(state.maxUnlockedStage, saved.maxUnlockedStage || 1);
-      const label = saved.maxUnlockedStage >= 6
+      const label = saved.maxUnlockedStage >= 6 && saved.currentStage === 6
         ? "Revisit the Crystal Sanctuary"
-        : `Continue Stage ${saved.currentStage}`;
+        : `Continue Level ${saved.currentStage}`;
       ui.continueSaved.textContent = label;
     }
     updateLevelSelectUI();
@@ -864,6 +882,16 @@
       state.growthAnimation = 1;
       if (state.level.door) state.level.door.open = state.growthLevel >= BAKERY_GATE_GROWTH;
       if (state.level.exitDoor) state.level.exitDoor.open = state.growthLevel >= GROWTH_FOODS.length;
+    } else if ([4, 5, 6].includes(state.stage) && saved.bonusStage === state.stage) {
+      const collected = new Set(saved.bonusCollectedIndices);
+      state.level.stars.forEach((star, index) => { star.collected = collected.has(index); });
+      state.collected = collected.size;
+      if (state.level.key) state.level.key.collected = saved.bonusKeyCollected;
+      if (state.level.door) {
+        state.level.door.open = state.stage === 5
+          ? state.collected === state.level.stars.length
+          : Boolean(saved.bonusKeyCollected);
+      }
     }
     state.checkpointX = clamp(saved.checkpointX || 150, 150, WORLD.width - 240);
     state.checkpointName = saved.checkpointName || `Stage ${state.stage} start`;
@@ -1036,7 +1064,14 @@
     if (section) {
       ui.section.textContent = section.name;
       if (state.lastSection && state.lastSection !== section.name && state.mode === "playing") {
-        const finalSection = state.stage === 1 ? "Rainbow Chamber" : state.stage === 2 ? "Magic Hat Gallery" : "Rainbow Cake Finale";
+        const finalSection = {
+          1: "Rainbow Chamber",
+          2: "Magic Hat Gallery",
+          3: "Rainbow Cake Finale",
+          4: "Moonstone Gate",
+          5: "Time Portal Finale",
+          6: "Rainbow Gem Shrine"
+        }[state.stage];
         showMessage(section.name === finalSection ? "Almost there! A rainbow glow is close!" : `Welcome to the ${section.name}!`, 1900);
       }
       state.lastSection = section.name;
@@ -1203,9 +1238,15 @@
   }
 
   function restartCurrentStage() {
-    if (state.stage === 3) startStage3();
-    else if (state.stage === 2) startStage2();
-    else startGame();
+    const starters = {
+      1: startGame,
+      2: startStage2,
+      3: startStage3,
+      4: startStage4,
+      5: startStage5,
+      6: startStage6
+    };
+    starters[state.stage]?.();
   }
 
   function restartLevel() {
@@ -1286,6 +1327,7 @@
         if (state.stage === 2) message = `The rainbow exit needs all six hats. ${MAGIC_HAT_TYPES.length - state.hats.length} still to find!`;
         if (state.stage === 3 && door.bakeryGate) message = `Sprinkles needs to grow a little more! Growth ${state.growthLevel} / ${door.growthRequirement}.`;
         if (state.stage === 3 && door.stageExit) message = `The bakery exit needs every treat. ${GROWTH_FOODS.length - state.foods.length} still to find!`;
+        if (state.stage === 5) message = `The time portal needs every crystal. ${state.level.stars.length - state.collected} still to find!`;
         showMessage(message, 2400);
       } else if (player.x < door.x + door.w && previousX >= door.x + door.w) {
         player.x = door.x + door.w;
@@ -1426,6 +1468,11 @@
             burst(star.x, star.y, ["#ffd95e", "#ffffff", "#ff9ec6"], 12, 4);
             sounds.collect();
             showMessage(state.collected % 5 === 0 ? `${state.collected} items! Wonderful exploring!` : "Sparkling gem collected!", 1200);
+            if (state.stage === 5 && state.collected === state.level.stars.length && state.level.door && !state.level.door.open) {
+              state.level.door.open = true;
+              sounds.openExit();
+              showMessage("All 20 time crystals found! The time portal is open!", 3000);
+            }
           }
         }
       }
@@ -1437,6 +1484,7 @@
         burst(key.x, key.y, ["#7ce8d0", "#ffffff", "#9f83ff", "#ffda62"], 20, 5);
         sounds.checkpoint();
         showMessage("Key found! The door is opening!", 2300);
+        saveProgress();
       }
     } else if (state.stage === 2) {
       for (const ball of state.level.magicBalls) {
@@ -1459,7 +1507,14 @@
         state.level.checkpoints.forEach((other) => { other.active = other.x <= checkpoint.x; });
         checkpoint.active = true;
         state.checkpointX = checkpoint.x + 55;
-        const checkpointPlace = state.stage === 1 ? "Cave" : state.stage === 2 ? "Crystal" : "Bakery oven";
+        const checkpointPlace = {
+          1: "Cave",
+          2: "Crystal",
+          3: "Bakery oven",
+          4: "Moonlight",
+          5: "Time crystal",
+          6: "Sanctuary"
+        }[state.stage] || "Adventure";
         state.checkpointName = `${checkpointPlace} checkpoint ${state.level.checkpoints.filter((item) => item.active).length}`;
         if (state.stage === 3) state.stage3Checkpoint = { x: state.checkpointX, name: state.checkpointName };
         state.hearts = state.config.hearts;
@@ -1697,7 +1752,7 @@
           { id: "hat-lava", start: 3780, end: 3930, text: "The rainbow platforms move slowly. Take your time!" },
           { id: "hat-exit", start: 6100, end: 6320, text: "Missing a hat? You can always travel back to find it." }
         ];
-    } else {
+    } else if (state.stage === 3) {
       tutorials = [
         { id: "food-tutorial", start: 240, end: 470, text: "Collect magical food to help Sprinkles grow!" },
         { id: "bakery-jumps", start: 1160, end: 1360, text: "Follow the frosting arrows across the wide bakery platforms." },
@@ -1705,6 +1760,21 @@
         { id: "dessert-platforms", start: 3300, end: 3460, text: "The cake platforms move slowly and predictably. Take your time!" },
         { id: "growth-gate", start: 5650, end: 5840, text: "The bakery gate opens at Growth 5. You can go back for any missed treat!" },
         { id: "final-food", start: 6250, end: 6400, text: "One final magical treat is waiting near the rainbow exit!" }
+      ];
+    } else if (state.stage === 4) {
+      tutorials = [
+        { id: "moonlight-stars", start: 250, end: 470, text: "Collect all 25 moonlight gems on the garden path!" },
+        { id: "moonlight-key", start: 5400, end: 5680, text: "The crystal key opens the Moonstone Gate ahead." }
+      ];
+    } else if (state.stage === 5) {
+      tutorials = [
+        { id: "time-crystals", start: 250, end: 470, text: "Collect all 20 time crystals before the countdown ends!" },
+        { id: "time-portal", start: 6080, end: 6280, text: "The time portal opens after every crystal is collected." }
+      ];
+    } else {
+      tutorials = [
+        { id: "sanctuary-gems", start: 250, end: 470, text: "The final sanctuary holds 30 rainbow gems!" },
+        { id: "sanctuary-key", start: 6500, end: 6780, text: "Find the final key to open the shrine path." }
       ];
     }
     for (const tutorial of tutorials) {
@@ -2323,6 +2393,8 @@
         let label = door.open ? "RAINBOW EXIT OPEN" : `${state.hats.length} / 6 HATS`;
         if (state.stage === 3 && door.bakeryGate) label = door.open ? "BAKERY GATE OPEN" : `${state.growthLevel} / ${door.growthRequirement} GROWTH`;
         if (state.stage === 3 && door.stageExit) label = door.open ? "BAKERY EXIT OPEN" : `${state.foods.length} / 6 TREATS`;
+        if (state.stage === 4 || state.stage === 6) label = door.open ? "CRYSTAL DOOR OPEN" : "CRYSTAL KEY NEEDED";
+        if (state.stage === 5) label = door.open ? "TIME PORTAL OPEN" : `${state.collected} / ${state.level.stars.length} CRYSTALS`;
         ctx.fillText(label, doorX + door.w / 2, door.y - 20);
       }
       ctx.restore();

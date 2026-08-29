@@ -1,6 +1,6 @@
 # Sprinkles and the Rainbow Gem
 
-**Sprinkles and the Rainbow Gem** is a cheerful, child-friendly three-stage browser game about a curious lavender cat exploring the Glittering Cave. Stage 1 is a gentle star-collecting adventure. Stage 2 continues into the colorful Crystal Cave, where six magic balls transform into hats. Stage 3 follows a delicious smell into a magical underground bakery, where six original Canvas-drawn treats make Sprinkles grow and open the path to the Rainbow Gem.
+**Sprinkles and the Rainbow Gem** is a cheerful, child-friendly six-level browser game about a curious lavender cat. The adventure begins in the Glittering Cave, continues through a Crystal Cave and magical bakery, then expands into the Moonlight Garden, a 60-second Time Challenge, and the Ultimate Crystal Sanctuary.
 
 The game is fully local. It has no accounts, ads, purchases, data collection, external links, downloads, or internet requirements.
 
@@ -90,7 +90,7 @@ The Stage 3 HUD shows food count, growth count, six accessible food slots, and a
 
 - `index.html` — accessible screens, buttons, HUD, game canvas, and touch controls.
 - `style.css` — responsive layout, title artwork, menus, controls, focus states, and reduced-motion styles.
-- `game.js` — stage management, all three level configurations, movement, collisions, obstacles, stars, magic balls, foods, visual growth, inventory, versioned saves, checkpoints, drawing, generated sounds, and UI logic.
+- `game.js` — stage management, all six level configurations, movement, collisions, obstacles, collectibles, visual growth, inventory, versioned saves, checkpoints, drawing, generated sounds, and UI logic.
 - `README.md` — setup, controls, customization, and extension notes.
 
 ## Adjust the difficulty
@@ -152,7 +152,7 @@ In Stage 3 only the newest collected hat is drawn on Sprinkles so the growing sp
 
 ## Saved progress and checkpoints
 
-Progress is stored locally under `sprinkles-rainbow-gem-save` using save version 3. It contains no personal information. The loader validates the difficulty, stage number, unique star indices, known hat IDs, known food IDs, checkpoint coordinates, unlock flags, and completion state. Growth is recalculated from unique valid foods instead of trusting a potentially corrupt stored number. Missing fields from older saves receive safe defaults, and invalid JSON falls back to a new adventure without crashing.
+Progress is stored locally under `sprinkles-rainbow-gem-save` using save version 4. It contains no personal information. The loader validates the difficulty, level number, unique collectible indices, known hat IDs, known food IDs, checkpoint coordinates, unlock flags, and completion state. Growth is recalculated from unique valid foods instead of trusting a potentially corrupt stored number. Missing fields from older saves receive safe defaults, and invalid JSON falls back to a new adventure without crashing.
 
 Food collection and checkpoint activation save immediately. The game also saves when it loses focus, becomes hidden, pauses, or is minimized as an installed web app. Resuming restores the correct food flags, growth target, hats, gate state, checkpoint position, hearts, and camera. **Restart Stage 3 from Beginning** clears only Stage 3 foods and growth; Stage 1 stars and Stage 2 hats remain.
 
@@ -200,14 +200,8 @@ For Stage 3, use the transition normally or select **Replay Stage 3** after comp
 
 For installed-PWA testing, open the deployed HTTPS page on a phone, add it to the Home Screen, launch it from the new icon, rotate the device, switch to another app, and return. The current stage and scale should remain intact. Safe-area padding keeps the control row above notches and home indicators.
 
-The root GitHub Pages service worker and the wrapper service worker use a game-specific versioned cache. All Stage 3 code and markup are in the existing `index.html`, `style.css`, and `game.js` core assets, so no cross-origin artwork is required. The v4 activation step deletes only older caches whose names start with this game's cache prefix.
+The root GitHub Pages service worker and the wrapper service worker use a game-specific versioned cache. All six levels use the existing `index.html`, `style.css`, and `game.js` core assets, so no cross-origin artwork is required. The v5 activation step deletes only older caches whose names start with this game's cache prefix.
 
 After a deployment, reload once while online so the updated service worker can replace its cache. Verify Stage 3 online, then switch the browser offline and reload to check the cached core. If an older layout remains, close all installed-game windows and reopen the app. As a final fallback, remove the Home Screen app, clear the site's browser data, visit the deployed URL again, and reinstall it.
 
 Known mobile limitation: very short portrait screens necessarily show a smaller 16:9 play area. The game remains usable and centered, but landscape provides a larger view. Mobile browser toolbar animations can briefly resize the frame while the toolbar expands or collapses.
-
-## Future ideas
-
-1. Stage 4 could enter a Moonlight Garden where collected fireflies illuminate safe flower bridges.
-2. Stage 4 could visit a Bubble-Lake Grotto with floating bubble platforms and a gentle color-matching puzzle.
-3. Stage 4 could climb a Cloud Library where magical story pages create temporary paths through the sky cave.
